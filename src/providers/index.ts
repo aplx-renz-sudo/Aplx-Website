@@ -1,0 +1,43 @@
+import { GeminiProvider } from './gemini';
+import { OllamaProvider } from './ollama';
+import { OpenAICompatibleProvider } from './openai-compatible';
+import type { ProviderId } from './registry';
+import type { AIProvider } from './types';
+
+export type ProviderSetup = {
+  provider: ProviderId;
+  apiKey: string;
+  model: string;
+  baseUrl?: string;
+};
+
+export function createProvider(setup: ProviderSetup): AIProvider {
+  const { provider, apiKey, model, baseUrl } = setup;
+  switch (provider) {
+    case 'gemini':
+      return new GeminiProvider(apiKey, model);
+    case 'openai':
+      return new OpenAICompatibleProvider({ apiKey, model, baseUrl: 'https://api.openai.com/v1' });
+    case 'groq':
+      return new OpenAICompatibleProvider({ apiKey, model, baseUrl: 'https://api.groq.com/openai/v1' });
+    case 'openrouter':
+      return new OpenAICompatibleProvider({
+        apiKey,
+        model,
+        baseUrl: 'https://openrouter.ai/api/v1',
+        extraHeaders: {
+          'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://aplx.web',
+          'X-Title': 'Aplx Web',
+        },
+      });
+    case 'ollama':
+      return new OllamaProvider(baseUrl || 'http://localhost:11434', model);
+    default:
+      return new GeminiProvider(apiKey, model);
+  }
+}
+
+export function isProviderReady(setup: ProviderSetup): boolean {
+  if (setup.provider === 'ollama') return !!setup.baseUrl?.trim();
+  return !!setup.apiKey.trim();
+}

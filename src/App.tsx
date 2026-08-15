@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ArrowUp, Check, ChevronLeft, Copy, Eye, EyeOff, KeyRound, Menu, MessageSquarePlus, Orbit, RotateCcw, Settings, ShieldCheck, Sparkles, Trash2, X, WandSparkles, Telescope, BookOpen, Code2 } from 'lucide-react';
-import { GeminiProvider } from './providers/gemini';
+import { ArrowUp, Check, ChevronLeft, Copy, Menu, MessageSquarePlus, Orbit, RotateCcw, Settings, ShieldCheck, Sparkles, Trash2, X, WandSparkles, Telescope, BookOpen, Code2, KeyRound } from 'lucide-react';
+import { createProvider, isProviderReady } from './providers';
 import type { ChatTurn } from './providers/types';
-import { clearLocalData, getRemember, loadKey, removeKey, saveKey } from './lib/credential';
+import { getProvider } from './providers/registry';
+import { clearLocalData, loadProviderConfig, saveProviderConfig, type ProviderConfig } from './lib/credential';
+import { ChatModelSelect, ProviderSettings } from './components/ProviderSettings';
 import { AboutPage } from './pages/AboutPage';
 
 type View = 'landing' | 'chat' | 'settings' | 'privacy' | 'about';
@@ -13,15 +15,11 @@ type Preferences = { theme: 'black' | 'midnight'; compact: boolean; sendOnEnter:
 
 const preferenceKey = 'aplx:preferences';
 const defaultPreferences: Preferences = { theme: 'black', compact: false, sendOnEnter: true, motion: false };
-const MODELS = [
-  { id: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
-  { id: 'gemini-3.6-flash', label: 'Gemini 3.6 Flash' },
-] as const;
 const starter: Message[] = [{
   id: 'welcome',
   role: 'model',
   time: 'now',
-  content: "Welcome to **Aplx Web**.\n\nI'm ready when you are. Add your own Gemini API key in Settings to start a private, direct connection.",
+  content: "Welcome to **Aplx**.\n\nI'm your AI assistant — connect any supported provider in Settings (Gemini, ChatGPT, Groq, OpenRouter, or Ollama) and start chatting.",
 }];
 const now = () => new Intl.DateTimeFormat([], { hour: 'numeric', minute: '2-digit' }).format(new Date());
 
@@ -42,13 +40,6 @@ function Mark({ text }: { text: string }) {
   );
 }
 
-function ModelSelect({ value, onChange, className }: { value: string; onChange: (v: string) => void; className?: string }) {
-  return (
-    <select className={className} value={value} onChange={e => onChange(e.target.value)} aria-label="Gemini model">
-      {MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
-    </select>
-  );
-}
 
 function Preference({ label, description, enabled, toggle }: { label: string; description: string; enabled: boolean; toggle: () => void }) {
   return (
@@ -63,9 +54,8 @@ function Preference({ label, description, enabled, toggle }: { label: string; de
 
 export default function App() {
   const [view, setView] = useState<View>('landing');
-  const [key, setKey] = useState(loadKey);
+  const [providerConfig, setProviderConfig] = useState<ProviderConfig>(loadProviderConfig);
   const [messages, setMessages] = useState<Message[]>(starter);
-  const [model, setModel] = useState<string>('gemini-3.5-flash');
   const [sidebar, setSidebar] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'provider' | 'privacy' | 'general' | 'about'>('provider');
   const [input, setInput] = useState('');
@@ -82,11 +72,15 @@ export default function App() {
     localStorage.setItem(preferenceKey, JSON.stringify(next));
   };
   const goSettings = () => { setSettingsTab('provider'); setView('settings'); };
+  const persistProvider = (config: ProviderConfig) => {
+    setProviderConfig(config);
+    saveProviderConfig(config);
+  };
 
   const send = async (text = input, replaceId?: string) => {
     const prompt = text.trim();
     if (!prompt || streaming) return;
-    if (!key) { goSettings(); return; }
+    if (!isProviderReady(providerConfig)) { goSettings(); return; }
 
     const user: Message = { id: crypto.randomUUID(), role: 'user', content: prompt, time: now() };
     const assistant: Message = { id: crypto.randomUUID(), role: 'model', content: '', time: 'now' };
@@ -101,14 +95,20 @@ export default function App() {
     setStreaming(true);
     stop.current = false;
 
+    const providerName = getProvider(providerConfig.provider).name;
     try {
-      await new GeminiProvider(key, model).stream(prompt, history, chunk => {
+      await createProvider({
+        provider: providerConfig.provider,
+        apiKey: providerConfig.apiKey,
+        model: providerConfig.model,
+        baseUrl: providerConfig.baseUrl,
+      }).stream(prompt, history, chunk => {
         if (!stop.current) setMessages(m => m.map(x => x.id === assistant.id ? { ...x, content: x.content + chunk } : x));
       });
     } catch {
       setMessages(m => m.map(x => x.id === assistant.id ? {
         ...x,
-        content: "I couldn't reach Gemini. Confirm your API key, connection, and available quota in Settings.",
+        content: `I couldn't reach ${providerName}. Check your provider settings, connection, and quota in Settings.`,
       } : x));
     } finally {
       setStreaming(false);
@@ -148,13 +148,13 @@ export default function App() {
               <button onClick={() => setView('privacy')}><ShieldCheck size={17} /> Privacy & security</button>
               <button onClick={() => setView('about')}><Orbit size={17} /> About Aplx</button>
               <a className="github-side" href="https://github.com/Korentic/Aplx" target="_blank" rel="noreferrer">Install Aplx ↗</a>
-              <div className="web-status"><span /> Aplx Web <small>Online</small></div>
+              <div className="web-status"><span /> Aplx Web <small>{getProvider(providerConfig.provider).name}</small></div>
             </div>
           </aside>
           <main className="chat">
             <header>
               <button className="icon mobile" onClick={() => setSidebar(true)}><Menu /></button>
-              <label className="model"><span /><ModelSelect value={model} onChange={setModel} /></label>
+              <label className="model"><span /><ChatModelSelect config={providerConfig} onModelChange={m => persistProvider({ ...providerConfig, model: m })} /></label>
               <div className="header-actions">
                 <button className="icon" title="Clear conversation" onClick={newChat}><Trash2 size={18} /></button>
                 <button className="icon" onClick={goSettings}><Settings size={18} /></button>
@@ -180,10 +180,8 @@ export default function App() {
         <SettingsPage
           tab={settingsTab}
           setTab={setSettingsTab}
-          keyValue={key}
-          setKeyValue={setKey}
-          model={model}
-          setModel={setModel}
+          providerConfig={providerConfig}
+          onProviderChange={persistProvider}
           preferences={preferences}
           setPreferences={updatePreferences}
           back={() => setView('chat')}
@@ -241,14 +239,14 @@ function Landing({ launch, settings, privacy, about }: { launch: () => void; set
       <div className="hero">
         <div className="eyebrow"><Sparkles size={14} /> PRIVATE AI SOFTWARE</div>
         <h1>AI, on <i>your</i> terms.</h1>
-        <p>Aplx Web is a calm, direct way to work with your own AI provider. Your Gemini key stays in your browser—always under your control.</p>
+        <p>Aplx is your AI assistant. Connect Gemini, ChatGPT, Groq, OpenRouter, or Ollama — your credentials stay in your browser, always under your control.</p>
         <div className="hero-actions">
           <button className="primary" onClick={launch}>Launch Aplx <ArrowUp size={16} /></button>
-          <button className="secondary" onClick={settings}><KeyRound size={16} /> Configure Gemini</button>
+          <button className="secondary" onClick={settings}><KeyRound size={16} /> Connect a provider</button>
         </div>
         <div className="trust">
           <span><ShieldCheck size={17} /> Your key, your browser</span>
-          <span><Orbit size={17} /> Browser → Gemini</span>
+          <span><Orbit size={17} /> Browser → your provider</span>
           <span><Sparkles size={17} /> No Aplx telemetry</span>
         </div>
       </div>
@@ -334,36 +332,15 @@ function Composer({ value, change, send, stop, streaming, sendOnEnter }: {
   );
 }
 
-function SettingsPage({ tab, setTab, keyValue, setKeyValue, model, setModel, preferences, setPreferences, back, onAbout }: {
+function SettingsPage({ tab, setTab, providerConfig, onProviderChange, preferences, setPreferences, back, onAbout }: {
   tab: 'provider' | 'privacy' | 'general' | 'about';
   setTab: (x: 'provider' | 'privacy' | 'general' | 'about') => void;
-  keyValue: string; setKeyValue: (x: string) => void;
-  model: string; setModel: (x: string) => void;
+  providerConfig: ProviderConfig;
+  onProviderChange: (c: ProviderConfig) => void;
   preferences: Preferences; setPreferences: (x: Preferences) => void;
   back: () => void;
   onAbout: () => void;
 }) {
-  const [draft, setDraft] = useState(keyValue);
-  const [show, setShow] = useState(false);
-  const [remember, setRemember] = useState(getRemember);
-  const [status, setStatus] = useState(keyValue ? 'Saved in browser' : 'Not connected');
-
-  const save = () => {
-    saveKey(draft, remember);
-    setKeyValue(draft);
-    setStatus('Saved in ' + (remember ? 'local browser storage' : 'this browser session'));
-  };
-  const test = async () => {
-    if (!draft) return;
-    setStatus('Checking a direct connection…');
-    try {
-      await new GeminiProvider(draft, model).testConnection();
-      setStatus('Connected directly to Gemini');
-    } catch {
-      setStatus('Connection failed — check key or quota');
-    }
-  };
-
   return (
     <main className="settings-page">
       <header className="settings-header">
@@ -383,42 +360,14 @@ function SettingsPage({ tab, setTab, keyValue, setKeyValue, model, setModel, pre
         </aside>
         <section className="settings-content">
           {tab === 'provider' && (
-            <>
-              <div className="section-kicker">AI PROVIDER</div>
-              <h2>Connect your intelligence.</h2>
-              <p className="lead">Bring your own Gemini API key. Aplx never receives it—your browser talks directly to Google.</p>
-              <div className="provider-card">
-                <div className="provider-logo">G</div>
-                <div><b>Google Gemini</b><p>Direct browser connection</p></div>
-                <span className="active-tag">ACTIVE</span>
-              </div>
-              <label className="field-label">GEMINI MODEL</label>
-              <ModelSelect className="model-select" value={model} onChange={setModel} />
-              <p className="model-note">Pick the model available to your Gemini API key. Aplx sends the selected model name directly to Google.</p>
-              <label className="field-label">YOUR GEMINI API KEY</label>
-              <div className="key-input">
-                <KeyRound size={18} />
-                <input type={show ? 'text' : 'password'} value={draft} onChange={e => setDraft(e.target.value)} placeholder="Paste your API key" autoComplete="off" />
-                <button onClick={() => setShow(!show)}>{show ? <EyeOff size={18} /> : <Eye size={18} />}</button>
-              </div>
-              <label className="remember">
-                <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
-                <span><b>Remember this key on this device</b><small>Off by default. Otherwise, the key stays only for this browser session.</small></span>
-              </label>
-              <div className="connection">
-                <span className={status.includes('Connected') ? 'success' : ''} />
-                <div><b>{status}</b><small>Request route: Browser → Google Gemini</small></div>
-              </div>
-              <div className="settings-actions">
-                <button className="primary" onClick={test} disabled={!draft}>Test connection</button>
-                <button className="secondary" onClick={save} disabled={!draft}>Save key</button>
-                <button className="text-danger" onClick={() => { removeKey(); setDraft(''); setKeyValue(''); setStatus('Key removed from this browser'); }}>Remove key</button>
-              </div>
-              <ConnectionDetails />
-            </>
+            <ProviderSettings
+              config={providerConfig}
+              onChange={onProviderChange}
+              onSave={() => {}}
+            />
           )}
           {tab === 'privacy' && (
-            <PrivacyContent clear={() => { clearLocalData(); setDraft(''); setKeyValue(''); setStatus('Local Aplx data cleared'); }} />
+            <PrivacyContent clear={() => { clearLocalData(); onProviderChange(loadProviderConfig()); }} />
           )}
           {tab === 'general' && (
             <>
@@ -467,9 +416,10 @@ function ConnectionDetails() {
     <div className="details">
       <h3>Connection details</h3>
       <dl>
-        <dt>Provider</dt><dd>Google Gemini</dd>
-        <dt>Credential</dt><dd>User-provided API key</dd>
-        <dt>Request route</dt><dd>Browser → Google Gemini</dd>
+        <dt>Assistant</dt><dd>Aplx (your interface)</dd>
+        <dt>Model provider</dt><dd>Your chosen provider</dd>
+        <dt>Credential</dt><dd>User-provided</dd>
+        <dt>Request route</dt><dd>Browser → your provider</dd>
         <dt>Aplx server access</dt><dd>None</dd>
         <dt>API key stored by Aplx server</dt><dd>No</dd>
       </dl>
@@ -484,14 +434,14 @@ function PrivacyContent({ clear }: { clear: () => void }) {
       <h2>Private by design.</h2>
       <p className="lead">Aplx Web has no server-side AI proxy and no Aplx-owned API key.</p>
       <div className="privacy-steps">
-        <h3>How your Gemini API key works</h3>
+        <h3>How your provider credentials work</h3>
         {[
-          'You enter your own Gemini API key.',
-          'The key stays in your browser session by default.',
-          'Aplx does not receive the key.',
-          'Gemini requests go directly from your browser to Google.',
-          'Aplx does not store the key on its servers.',
-          'Removing the key removes it from browser application data.',
+          'You choose a provider and enter your own API key or local URL.',
+          'Credentials stay in your browser session by default.',
+          'Aplx does not receive your keys.',
+          'Requests go directly from your browser to the provider you selected.',
+          'Aplx does not store credentials on its servers.',
+          'Removing credentials clears them from browser application data.',
         ].map((x, i) => <div key={x}><span>0{i + 1}</span>{x}</div>)}
       </div>
       <ConnectionDetails />
@@ -517,9 +467,9 @@ function Privacy({ back, settings, about }: { back: () => void; settings: () => 
       <div className="privacy-hero">
         <div className="eyebrow"><ShieldCheck size={14} /> PRIVACY & SECURITY</div>
         <h1>Your key is <i>yours.</i></h1>
-        <p>Aplx is deliberately built so your Gemini credential does not pass through an Aplx server.</p>
+        <p>Aplx is deliberately built so your provider credentials do not pass through an Aplx server.</p>
         <ConnectionDetails />
-        <button className="primary" onClick={settings}>Configure Gemini <ArrowUp size={16} /></button>
+        <button className="primary" onClick={settings}>Connect a provider <ArrowUp size={16} /></button>
       </div>
     </main>
   );
