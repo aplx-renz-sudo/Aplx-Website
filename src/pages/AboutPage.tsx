@@ -188,6 +188,16 @@ export function AboutPage({ launch, home, settings, motion }: AboutPageProps) {
         </ol>
       </Reveal>
 
+      <Reveal className="about-section">
+        <p className="section-kicker">CREDITS & ACKNOWLEDGMENTS</p>
+        <h2>Built with the help of</h2>
+        <div className="about-card glass p-6 mt-4">
+          <p className="about-body text-[#dce5fb] leading-relaxed">
+            R3nz (developer) , Github copilot, Claude Sonnet and Haiku and Opus models, CodeX (GPT-5.6), Kimi K3, GPT-4, minimax-m3, Grok, Le chat Mistral, Gemini, and many more AIs!
+          </p>
+        </div>
+      </Reveal>
+
       <section className={'about-cta' + (motion ? ' motion-on' : '')} aria-labelledby="about-cta-heading">
         <div className="about-cta-stars" aria-hidden="true" />
         <div className="about-cta-orbit" aria-hidden="true" />

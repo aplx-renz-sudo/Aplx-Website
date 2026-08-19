@@ -11,6 +11,8 @@ export type ProviderConfig = {
   model: string;
   baseUrl: string;
   remember: boolean;
+  apiKeys?: Partial<Record<ProviderId, string>>;
+  baseUrls?: Partial<Record<ProviderId, string>>;
 };
 
 const defaultConfig = (): ProviderConfig => ({
@@ -18,7 +20,11 @@ const defaultConfig = (): ProviderConfig => ({
   apiKey: '',
   model: getProvider('gemini').defaultModel,
   baseUrl: getProvider('ollama').baseUrl || 'http://localhost:11434',
-  remember: false,
+  remember: true,
+  apiKeys: {},
+  baseUrls: {
+    ollama: 'http://localhost:11434',
+  },
 });
 
 function readStorage(): ProviderConfig | null {
@@ -26,13 +32,22 @@ function readStorage(): ProviderConfig | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as Partial<ProviderConfig>;
-    const def = getProvider((parsed.provider as ProviderId) || 'gemini');
+    const provider = (parsed.provider as ProviderId) || 'gemini';
+    const def = getProvider(provider);
+    const apiKeys = parsed.apiKeys || {};
+    if (parsed.apiKey && !apiKeys[provider]) {
+      apiKeys[provider] = parsed.apiKey;
+    }
+    const baseUrls = parsed.baseUrls || { ollama: 'http://localhost:11434' };
+
     return {
-      provider: parsed.provider || 'gemini',
-      apiKey: parsed.apiKey || '',
+      provider,
+      apiKey: apiKeys[provider] || parsed.apiKey || '',
       model: parsed.model || def.defaultModel,
-      baseUrl: parsed.baseUrl || getProvider('ollama').baseUrl || 'http://localhost:11434',
-      remember: parsed.remember ?? false,
+      baseUrl: baseUrls[provider] || parsed.baseUrl || def.baseUrl || 'http://localhost:11434',
+      remember: parsed.remember ?? true,
+      apiKeys,
+      baseUrls,
     };
   } catch {
     return null;
@@ -47,7 +62,9 @@ function migrateLegacy(): ProviderConfig | null {
     apiKey: key,
     model: getProvider('gemini').defaultModel,
     baseUrl: getProvider('ollama').baseUrl || 'http://localhost:11434',
-    remember: localStorage.getItem(REMEMBER_KEY) === 'true',
+    remember: true,
+    apiKeys: { gemini: key },
+    baseUrls: { ollama: 'http://localhost:11434' },
   };
 }
 
@@ -56,17 +73,38 @@ export function loadProviderConfig(): ProviderConfig {
 }
 
 export function saveProviderConfig(config: ProviderConfig) {
+  const apiKeys = { ...(config.apiKeys || {}) };
+  if (config.apiKey) {
+    apiKeys[config.provider] = config.apiKey;
+  }
+  const baseUrls = { ...(config.baseUrls || {}) };
+  if (config.baseUrl) {
+    baseUrls[config.provider] = config.baseUrl;
+  }
+
+  const payload: ProviderConfig = {
+    ...config,
+    apiKeys,
+    baseUrls,
+  };
+
   sessionStorage.removeItem(CONFIG_KEY);
   localStorage.removeItem(CONFIG_KEY);
   const store = config.remember ? localStorage : sessionStorage;
-  store.setItem(CONFIG_KEY, JSON.stringify(config));
+  store.setItem(CONFIG_KEY, JSON.stringify(payload));
   localStorage.setItem(REMEMBER_KEY, String(config.remember));
   sessionStorage.removeItem(LEGACY_KEY);
   localStorage.removeItem(LEGACY_KEY);
 }
 
 export function removeProviderCredentials(config: ProviderConfig) {
-  const next = { ...config, apiKey: '' };
+  const apiKeys = { ...(config.apiKeys || {}) };
+  delete apiKeys[config.provider];
+  const next: ProviderConfig = {
+    ...config,
+    apiKey: '',
+    apiKeys,
+  };
   saveProviderConfig(next);
   return next;
 }

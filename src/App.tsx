@@ -751,7 +751,23 @@ export default function App() {
                   <span />
                   <ChatModelSelect
                     config={providerConfig}
-                    onModelChange={m => persistProvider({ ...providerConfig, model: m })}
+                    onModelChange={(m, provId) => {
+                      const def = getProvider(provId);
+                      const key =
+                        providerConfig.apiKeys?.[provId] ||
+                        (provId === providerConfig.provider ? providerConfig.apiKey : '');
+                      const baseUrl =
+                        providerConfig.baseUrls?.[provId] ||
+                        def.baseUrl ||
+                        'http://localhost:11434';
+                      persistProvider({
+                        ...providerConfig,
+                        provider: provId,
+                        model: m,
+                        apiKey: key,
+                        baseUrl,
+                      });
+                    }}
                   />
                 </label>
               </div>
@@ -1409,7 +1425,7 @@ function FullSettingsModal({
                 <div className="section-kicker">CREDITS</div>
                 <h3>Built with the help of</h3>
                 <p>
-                  CodeX (GPT 5.6 Terra), Minimax-m3, Korentic (R3nz), Claude Opus and Sonnet 4.6, GitHub Copilot, and the open-source community.
+                  R3nz (developer) , Github copilot, Claude Sonnet and Haiku and Opus models, CodeX (GPT-5.6), Kimi K3, GPT-4, minimax-m3, Grok, Le chat Mistral, Gemini, and many more AIs!
                 </p>
                 <a href="https://github.com/Korentic/Aplx" target="_blank" rel="noreferrer">
                   Explore & install Aplx on GitHub ↗

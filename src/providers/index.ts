@@ -1,3 +1,4 @@
+import { AnthropicProvider } from './anthropic';
 import { GeminiProvider } from './gemini';
 import { OllamaProvider } from './ollama';
 import { OpenAICompatibleProvider } from './openai-compatible';
@@ -17,14 +18,52 @@ export function createProvider(setup: ProviderSetup): AIProvider {
     case 'gemini':
       return new GeminiProvider(apiKey, model);
     case 'openai':
-      return new OpenAICompatibleProvider({ apiKey, model, baseUrl: 'https://api.openai.com/v1' });
+      return new OpenAICompatibleProvider({
+        apiKey,
+        model,
+        baseUrl: baseUrl || 'https://api.openai.com/v1',
+      });
+    case 'claude':
+      return new AnthropicProvider({
+        apiKey,
+        model,
+        baseUrl: baseUrl || 'https://api.anthropic.com/v1',
+      });
+    case 'grok':
+      return new OpenAICompatibleProvider({
+        apiKey,
+        model,
+        baseUrl: baseUrl || 'https://api.x.ai/v1',
+      });
+    case 'mistral':
+      return new OpenAICompatibleProvider({
+        apiKey,
+        model,
+        baseUrl: baseUrl || 'https://api.mistral.ai/v1',
+      });
+    case 'kimi':
+      return new OpenAICompatibleProvider({
+        apiKey,
+        model,
+        baseUrl: baseUrl || 'https://api.moonshot.cn/v1',
+      });
+    case 'minimax':
+      return new OpenAICompatibleProvider({
+        apiKey,
+        model,
+        baseUrl: baseUrl || 'https://api.minimax.chat/v1',
+      });
     case 'groq':
-      return new OpenAICompatibleProvider({ apiKey, model, baseUrl: 'https://api.groq.com/openai/v1' });
+      return new OpenAICompatibleProvider({
+        apiKey,
+        model,
+        baseUrl: baseUrl || 'https://api.groq.com/openai/v1',
+      });
     case 'openrouter':
       return new OpenAICompatibleProvider({
         apiKey,
         model,
-        baseUrl: 'https://openrouter.ai/api/v1',
+        baseUrl: baseUrl || 'https://openrouter.ai/api/v1',
         extraHeaders: {
           'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://aplx.web',
           'X-Title': 'Aplx Web',
