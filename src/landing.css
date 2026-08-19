@@ -1,0 +1,228 @@
+/* ==========================================================================
+   Aplx Lively & Playful Global Animation System
+   ========================================================================== */
+
+/* Keyframe Animations */
+
+@keyframes float-hero {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.animate-float-hero {
+  animation: float-hero 4s ease-in-out infinite;
+}
+
+@keyframes playful-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-7px) scale(1.06);
+  }
+  60% {
+    transform: translateY(-2px) scale(0.98);
+  }
+}
+.animate-playful-bounce {
+  animation: playful-bounce 3.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+
+@keyframes playful-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-6deg) scale(1.05); }
+  75% { transform: rotate(6deg) scale(1.05); }
+}
+.animate-playful-wiggle {
+  animation: playful-wiggle 2.5s ease-in-out infinite;
+}
+
+@keyframes text-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.lively-shimmer-text {
+  background: linear-gradient(90deg, #8ea8ff, #d4a8ff, #4eedc6, #ff7bb0, #8ea8ff);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-shimmer 5s ease infinite;
+}
+
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.85) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+}
+.animate-twinkle {
+  animation: star-twinkle 3s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 0.3; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+.animate-pulse-ring {
+  animation: pulse-ring 4s ease-in-out infinite;
+}
+
+@keyframes float-heart {
+  0% { transform: translateY(0) scale(0.8); opacity: 1; }
+  100% { transform: translateY(-38px) scale(1.3); opacity: 0; }
+}
+.animate-float-heart {
+  animation: float-heart 1.2s ease-out forwards;
+}
+
+@keyframes message-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modal-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.93) translateY(10px);
+  }
+  70% {
+    transform: scale(1.01) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-modal-pop {
+  animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ==========================================================================
+   Playful Micro-Interactions Everywhere
+   ========================================================================== */
+
+/* Buttons with spring bounce */
+.playful-btn, .primary, .secondary, .nav-launch {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background 0.2s ease !important;
+}
+.playful-btn:hover, .primary:hover, .secondary:hover, .nav-launch:hover {
+  transform: translateY(-2px) scale(1.03) !important;
+}
+.playful-btn:active, .primary:active, .secondary:active, .nav-launch:active {
+  transform: translateY(1px) scale(0.96) !important;
+}
+
+/* Pills & Chips */
+.playful-pill, .trust span, .prompt-deck button, .provider-pick {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease !important;
+}
+.playful-pill:hover, .trust span:hover, .prompt-deck button:hover, .provider-pick:hover {
+  transform: translateY(-3px) scale(1.02) !important;
+  box-shadow: 0 8px 24px -6px rgba(142, 168, 255, 0.2) !important;
+}
+
+/* Icons spring twist */
+.icon, .message-tools button {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease, background 0.2s ease !important;
+}
+.icon:hover {
+  transform: scale(1.18) rotate(6deg) !important;
+  color: #edf2ff !important;
+}
+.message-tools button:hover {
+  transform: scale(1.15) !important;
+  color: #edf2ff !important;
+}
+
+/* Brand mark playful tilt */
+.brand-mark, .wordmark span {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+.brand-mark:hover, .wordmark span:hover {
+  transform: rotate(-16deg) scale(1.2) !important;
+}
+
+/* New chat button */
+.new-chat {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease !important;
+}
+.new-chat:hover {
+  transform: translateY(-2px) scale(1.02) !important;
+  border-color: #8ea8ff66 !important;
+  box-shadow: 0 6px 20px -4px rgba(142, 168, 255, 0.25) !important;
+}
+
+/* History items */
+.history {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, color 0.2s ease !important;
+}
+.history:hover {
+  transform: translateX(4px) !important;
+  color: #edf2ff !important;
+}
+
+/* Messages pop in */
+.message {
+  animation: message-pop-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Avatar breathing & spring */
+.avatar {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease !important;
+}
+.avatar:hover {
+  transform: scale(1.15) rotate(-5deg) !important;
+  box-shadow: 0 0 14px rgba(142, 168, 255, 0.4) !important;
+}
+
+/* Send button spring */
+.send {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, box-shadow 0.2s ease !important;
+}
+.send:hover {
+  transform: scale(1.1) rotate(-4deg) !important;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.3) !important;
+}
+.send:active {
+  transform: scale(0.92) !important;
+}
+
+/* Composer glowing focus */
+.composer {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.25s ease !important;
+}
+.composer:focus-within {
+  border-color: #8ea8ff88 !important;
+  box-shadow: 0 10px 35px rgba(142, 168, 255, 0.22) !important;
+}

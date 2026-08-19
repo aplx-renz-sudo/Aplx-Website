@@ -55,7 +55,7 @@ export function AboutPage({ launch, home, settings, motion }: AboutPageProps) {
       <header className="about-hero">
         <div className="about-hero-copy">
           <p className="eyebrow">Built to be yours.</p>
-          <h1>AI should feel like <i>yours.</i></h1>
+          <h1>AI should feel like <i className="lively-shimmer-text">yours.</i></h1>
           <p className="about-lead">
             Aplx is an independent AI project built around one simple idea: powerful AI shouldn't have to mean giving up control.
           </p>
