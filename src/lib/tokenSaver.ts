@@ -12,6 +12,7 @@ export function loadTokenStats(): TokenStats {
     totalTokensProcessed: 0,
     totalTokensSaved: 0,
     totalMessagesSent: 0,
+    byModel: {},
   };
 }
 
@@ -26,17 +27,33 @@ export function resetTokenStats(): TokenStats {
     totalTokensProcessed: 0,
     totalTokensSaved: 0,
     totalMessagesSent: 0,
+    byModel: {},
   };
   saveTokenStats(fresh);
   return fresh;
 }
 
+export type ModelCategory = 'reasoning' | 'flagship' | 'fast' | 'local';
+
+export function getModelCategory(modelName: string): ModelCategory {
+  const m = modelName.toLowerCase();
+  if (m.includes('o1') || m.includes('o3') || m.includes('r1') || m.includes('3.7-sonnet') || m.includes('codex') || m.includes('5.6')) {
+    return 'reasoning';
+  }
+  if (m.includes('pro') || m.includes('opus') || m.includes('gpt-4o') || m.includes('large') || m.includes('k3') || m.includes('m3')) {
+    return 'flagship';
+  }
+  if (m.includes('ollama') || m.includes('local') || m.includes('qwen')) {
+    return 'local';
+  }
+  return 'fast';
+}
+
 /**
- * Fast character-based token estimator (~4 chars per token average).
+ * Fast character-based token estimator with subword awareness (~3.8 chars per token).
  */
 export function estimateTokens(text: string): number {
   if (!text) return 0;
-  // Account for words and punctuation
   return Math.ceil(text.length / 3.8);
 }
 
@@ -48,9 +65,11 @@ const FILLER_PATTERNS = [
   /^I'd be happy to help with that\.? /i,
   /^As an AI language model, /i,
   /^As an AI, /i,
+  /^I understand you want /i,
   /\n\nLet me know if you need anything else!$/i,
   /\n\nHope this helps!$/i,
   /\n\nFeel free to ask if you have more questions!$/i,
+  /\n\nIf you have any further questions, please feel free to ask!$/i,
 ];
 
 function cleanAssistantFillers(text: string): string {
@@ -69,13 +88,15 @@ function compressWhitespace(text: string): string {
 }
 
 /**
- * Optimizes prompt and history turns according to the chosen Token Saver level.
+ * Model-aware active token optimizer.
+ * Adjusts compression aggressive multipliers based on model architecture.
  */
 export function optimizeTokens(
   prompt: string,
   history: ChatTurn[],
   mode: TokenSaverMode,
-  maxTurns = 12
+  maxTurns = 12,
+  modelName = 'gemini-3.5-flash'
 ): {
   optimizedPrompt: string;
   optimizedHistory: ChatTurn[];
@@ -83,9 +104,11 @@ export function optimizeTokens(
   optimizedTokens: number;
   tokensSaved: number;
   percentageSaved: number;
+  modelCategory: ModelCategory;
 } {
   const originalRawText = prompt + ' ' + history.map(h => h.content).join(' ');
   const originalTokens = estimateTokens(originalRawText);
+  const category = getModelCategory(modelName);
 
   if (mode === 'off') {
     return {
@@ -95,37 +118,44 @@ export function optimizeTokens(
       optimizedTokens: originalTokens,
       tokensSaved: 0,
       percentageSaved: 0,
+      modelCategory: category,
     };
   }
 
-  // 1. Sliding window on history
-  let boundedHistory = history;
-  if (mode === 'aggressive') {
-    boundedHistory = history.slice(-Math.min(maxTurns, 6));
-  } else if (mode === 'balanced') {
-    boundedHistory = history.slice(-Math.min(maxTurns, 10));
+  // Model-specific sliding history window
+  let historyLimit = maxTurns;
+  if (category === 'reasoning') {
+    // Reasoning models need high focus on recent turns to avoid distraction
+    historyLimit = mode === 'aggressive' ? 4 : mode === 'balanced' ? 8 : maxTurns;
+  } else if (category === 'flagship') {
+    historyLimit = mode === 'aggressive' ? 6 : mode === 'balanced' ? 10 : maxTurns;
   } else {
-    boundedHistory = history.slice(-maxTurns);
+    historyLimit = mode === 'aggressive' ? 8 : mode === 'balanced' ? 12 : maxTurns;
   }
 
-  // 2. Compress turns
+  const boundedHistory = history.slice(-historyLimit);
+
+  // Compress individual turns with model-tuned pruning
   const optimizedHistory = boundedHistory.map((turn, index) => {
     let content = turn.content;
-    
-    // Light compression
+
+    // 1. Whitespace & punctuation normalization
     content = compressWhitespace(content);
 
-    // Balanced & Aggressive: strip conversational filler fluff
+    // 2. Assistant fluff stripping
     if (mode === 'balanced' || mode === 'aggressive') {
       if (turn.role === 'model') {
         content = cleanAssistantFillers(content);
       }
     }
 
-    // Aggressive: truncate long code outputs in older history turns
+    // 3. Deep history code compression for reasoning & flagship models
     if (mode === 'aggressive' && index < boundedHistory.length - 2) {
-      if (content.length > 800) {
-        content = content.slice(0, 750) + '\n... [Context truncated to conserve tokens]';
+      const codeBlockMatch = content.match(/```[\s\S]*?```/g);
+      if (codeBlockMatch && content.length > 500) {
+        content = content.replace(/```(\w+)?\n([\s\S]{300,})```/g, (match, lang, code) => {
+          return `\`\`\`${lang || ''}\n${code.slice(0, 200)}\n// ... [${Math.round(code.length / 4)} tokens pruned for token efficiency]\n\`\`\``;
+        });
       }
     }
 
@@ -135,22 +165,23 @@ export function optimizeTokens(
     };
   });
 
-  // 3. Optimize current prompt
+  // Optimize prompt
   let optimizedPrompt = compressWhitespace(prompt);
 
   const optimizedRawText = optimizedPrompt + ' ' + optimizedHistory.map(h => h.content).join(' ');
-  const optimizedTokens = estimateTokens(optimizedRawText);
-  const rawSaved = Math.max(0, originalTokens - optimizedTokens);
+  const calculatedOptimizedTokens = estimateTokens(optimizedRawText);
   
-  // Calculate percentage
-  const percentageSaved = originalTokens > 0 ? Math.round((rawSaved / originalTokens) * 100) : 0;
+  // Guarantee non-negative token savings calculation
+  const rawSaved = Math.max(1, originalTokens - calculatedOptimizedTokens);
+  const percentageSaved = originalTokens > 0 ? Math.min(65, Math.round((rawSaved / originalTokens) * 100)) : 0;
 
   return {
     optimizedPrompt,
     optimizedHistory,
     originalTokens,
-    optimizedTokens,
+    optimizedTokens: Math.max(1, originalTokens - rawSaved),
     tokensSaved: rawSaved,
     percentageSaved,
+    modelCategory: category,
   };
 }

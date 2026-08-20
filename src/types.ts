@@ -8,6 +8,7 @@ export type Message = ChatTurn & {
   time: string;
   thoughtTime?: number;
   tokensSaved?: number;
+  modelUsed?: string;
 };
 
 export type ThemePreset =
@@ -46,6 +47,16 @@ export type PersonaId =
   | 'hacker'
   | 'custom';
 
+export type UserProfile = {
+  id: string;
+  name: string;
+  avatar: string; // Preset key or base64 / data URL
+  avatarType: 'preset' | 'custom';
+  bio?: string;
+  joinedAt: number;
+  isSetupComplete: boolean;
+};
+
 export type Preferences = {
   theme: ThemePreset;
   customTheme: CustomThemeConfig;
@@ -83,4 +94,5 @@ export type TokenStats = {
   totalTokensProcessed: number;
   totalTokensSaved: number;
   totalMessagesSent: number;
+  byModel?: Record<string, { processed: number; saved: number }>;
 };
