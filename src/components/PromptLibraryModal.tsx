@@ -118,37 +118,46 @@ export function PromptLibraryModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl animate-fade-in">
-      <div className="w-full max-w-xl max-h-[85vh] flex flex-col rounded-2xl bg-[#0c101a]/95 border border-white/[0.1] shadow-2xl text-[#f5f5f7] overflow-hidden animate-modal-pop">
+    <div
+      className="modal-overlay"
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="prompt-library-title"
+    >
+      <div className="modal-dialog" style={{ maxWidth: '560px' }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
-          <div className="flex items-center gap-2">
-            <Sparkles className="text-blue-400" size={17} />
-            <h3 className="text-sm font-semibold text-[#f5f5f7]">Prompt Library</h3>
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles className="text-blue-400" size={17} style={{ color: '#2997ff' }} />
+            <h3 id="prompt-library-title" className="text-sm font-semibold text-[#f5f5f7]">Prompt Library</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-[#86868b] hover:text-[#f5f5f7] hover:bg-white/[0.08] transition-colors"
+            className="modal-close-btn"
+            aria-label="Close"
           >
-            <X size={16} />
+            <X size={15} />
           </button>
         </div>
 
         {/* Search & Categories */}
-        <div className="p-4 border-b border-white/[0.06] bg-white/[0.01] space-y-2.5">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08]">
-            <Search size={14} className="text-[#636366]" />
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <Search size={14} className="text-[#636366]" style={{ color: '#636366', flexShrink: 0 }} />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search prompt templates…"
-              className="bg-transparent text-xs text-[#f5f5f7] outline-none w-full placeholder:text-[#636366]"
+              style={{ width: '100%', background: 'transparent', border: 'none', color: '#f5f5f7', fontSize: '12px', outline: 'none' }}
             />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex gap-1 overflow-x-auto text-xs">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', fontSize: '12px' }}>
               {[
                 { id: 'all', label: 'All' },
                 { id: 'code', label: 'Coding' },
@@ -159,11 +168,17 @@ export function PromptLibraryModal({
                 <button
                   key={c.id}
                   onClick={() => setCategory(c.id)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
-                    category === c.id
-                      ? 'bg-white text-black'
-                      : 'bg-white/[0.05] text-[#86868b] hover:text-[#f5f5f7] hover:bg-white/[0.09]'
-                  }`}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '999px',
+                    fontSize: '11.5px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    border: '1px solid transparent',
+                    background: category === c.id ? '#ffffff' : 'rgba(255,255,255,0.05)',
+                    color: category === c.id ? '#000000' : '#86868b',
+                  }}
                 >
                   {c.label}
                 </button>
@@ -172,7 +187,17 @@ export function PromptLibraryModal({
 
             <button
               onClick={() => setShowAddForm(!showAddForm)}
-              className="text-xs text-[#2997ff] hover:underline flex items-center gap-1 flex-none ml-2"
+              style={{
+                fontSize: '11.5px',
+                color: '#2997ff',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                marginLeft: 'auto',
+              }}
             >
               <BookmarkPlus size={13} /> {showAddForm ? 'Cancel' : 'New Template'}
             </button>
@@ -181,23 +206,23 @@ export function PromptLibraryModal({
 
         {/* Custom Template Add Form */}
         {showAddForm && (
-          <form onSubmit={handleSaveCustom} className="p-4 bg-white/[0.02] border-b border-white/[0.08] space-y-2">
+          <form onSubmit={handleSaveCustom} style={{ padding: '14px 16px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <input
               type="text"
               value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
               placeholder="Template title (e.g. SQL Query Generator)"
-              className="w-full px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-[#f5f5f7] outline-none"
+              style={{ width: '100%', padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '12px', color: '#f5f5f7', outline: 'none' }}
             />
             <textarea
               rows={3}
               value={newPrompt}
               onChange={e => setNewPrompt(e.target.value)}
               placeholder="Prompt template instructions…"
-              className="w-full p-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-[#f5f5f7] outline-none font-mono"
+              style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '12px', color: '#f5f5f7', outline: 'none', fontFamily: 'var(--font-mono)' }}
             />
-            <div className="flex justify-end">
-              <button type="submit" className="primary px-3 py-1 text-xs rounded-lg font-semibold">
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="submit" className="primary" style={{ padding: '4px 12px', fontSize: '11.5px' }}>
                 Save Template
               </button>
             </div>
@@ -205,9 +230,9 @@ export function PromptLibraryModal({
         )}
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {filtered.length === 0 ? (
-            <div className="text-center py-8 text-xs text-[#636366]">No templates match your query.</div>
+            <div style={{ textAlign: 'center', padding: '32px 0', fontSize: '12px', color: '#636366' }}>No templates match your query.</div>
           ) : (
             filtered.map(p => (
               <div
@@ -216,18 +241,27 @@ export function PromptLibraryModal({
                   onSelectPrompt(p.prompt);
                   onClose();
                 }}
-                className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.16] hover:bg-white/[0.06] transition-all cursor-pointer group"
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: '12px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">{p.icon}</span>
-                    <b className="text-xs text-[#f5f5f7] font-medium">{p.title}</b>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px' }}>{p.icon}</span>
+                    <strong style={{ fontSize: '12px', color: '#f5f5f7', fontWeight: 500 }}>{p.title}</strong>
                   </div>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-white/[0.05] text-[#86868b]">
+                  <span style={{ fontSize: '10px', textTransform: 'uppercase', fontFamily: 'var(--font-mono)', padding: '2px 6px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: '#86868b' }}>
                     {p.category}
                   </span>
                 </div>
-                <p className="text-[11px] text-[#86868b] line-clamp-2 font-mono leading-relaxed">{p.prompt}</p>
+                <p style={{ fontSize: '11px', color: '#86868b', fontFamily: 'var(--font-mono)', lineHeight: '1.4', margin: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                  {p.prompt}
+                </p>
               </div>
             ))
           )}

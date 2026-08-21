@@ -32,98 +32,146 @@ export function ApiKeyRequiredModal({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl animate-fade-in">
-      <div className="relative w-full max-w-md p-6 rounded-2xl bg-[#0c101a]/95 border border-white/[0.1] shadow-2xl space-y-4 text-[#f5f5f7]">
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-4 right-4 p-1 rounded-lg text-[#86868b] hover:text-[#f5f5f7] hover:bg-white/[0.08] transition-colors"
-          aria-label="Close"
-        >
-          <X size={16} />
-        </button>
-
+    <div
+      className="modal-overlay"
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="api-key-modal-title"
+    >
+      <div className="modal-dialog" style={{ maxWidth: '440px' }}>
         {/* Header */}
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 flex-none">
-            <KeyRound size={18} />
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <ShieldAlert size={13} /> AUTHENTICATION REQUIRED
+            </span>
           </div>
-          <div>
-            <div className="text-[10.5px] text-amber-400 font-semibold uppercase tracking-wider flex items-center gap-1">
-              <ShieldAlert size={12} /> Authentication Required
-            </div>
-            <h3 className="text-base font-semibold text-[#f5f5f7] tracking-tight mt-0.5">
-              {provider.name} Requires an API Key
-            </h3>
-          </div>
-        </div>
-
-        {/* Body Description */}
-        <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-[#86868b] space-y-1.5 leading-relaxed">
-          <p>
-            You selected a model on <b className="text-[#f5f5f7]">{provider.name}</b>, but no credentials are saved locally in your browser.
-          </p>
-          <p className="text-[#636366]">
-            Aplx connects directly from your browser to the provider without intermediate proxy servers.
-          </p>
-        </div>
-
-        {/* Action Choices */}
-        <div className="space-y-2 pt-1">
           <button
             type="button"
-            onClick={() => {
-              onClose();
-              onGoToSettings(providerId);
-            }}
-            className="w-full p-2.5 rounded-xl bg-[#f5f5f7] hover:bg-white text-black font-semibold text-xs flex items-center justify-between transition-colors shadow-md cursor-pointer"
+            onClick={onClose}
+            className="modal-close-btn"
+            aria-label="Close"
           >
-            <span className="flex items-center gap-2">
-              <KeyRound size={14} /> Add {provider.name} Key in Settings
-            </span>
-            <ArrowRight size={14} />
+            <X size={15} />
           </button>
+        </div>
 
-          {/* Local offline alternative */}
-          <button
-            type="button"
-            onClick={() => {
-              onClose();
-              onSwitchToLocal(localDetection?.recommendedModel?.id || 'llama3.3');
-            }}
-            className="w-full p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[#f5f5f7] text-xs font-medium flex items-center justify-between transition-colors cursor-pointer"
-          >
-            <span className="flex items-center gap-2">
-              <Cpu size={14} className="text-[#2997ff]" />
-              <span>Use Offline Model (Ollama / LM Studio)</span>
-            </span>
-            <span className="text-[10px] text-[#86868b] font-mono">No Key</span>
-          </button>
-
-          {/* Other configured providers if available */}
-          {configuredProviders.length > 0 && (
-            <div className="pt-2 border-t border-white/[0.06]">
-              <div className="text-[10.5px] font-mono text-[#86868b] uppercase tracking-wider mb-1.5">
-                Configured Providers with Saved Keys
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {configuredProviders.map(p => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onGoToSettings(p.id);
-                    }}
-                    className="px-2 py-1 rounded-md bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.06] text-[11px] text-[#f5f5f7] flex items-center gap-1 transition-colors"
-                  >
-                    <Sparkles size={11} className="text-[#2997ff]" />
-                    <span>{p.name}</span>
-                  </button>
-                ))}
-              </div>
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f59e0b', flexShrink: 0 }}>
+              <KeyRound size={18} />
             </div>
-          )}
+            <div>
+              <h3 id="api-key-modal-title" style={{ fontSize: '15px', fontWeight: 600, color: '#f5f5f7', margin: '0 0 4px 0' }}>
+                {provider.name} Requires an API Key
+              </h3>
+              <p style={{ fontSize: '12px', color: '#86868b', margin: 0, lineHeight: 1.5 }}>
+                You selected a model on <strong style={{ color: '#f5f5f7' }}>{provider.name}</strong>, but no credentials are saved locally in your browser.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ padding: '10px 12px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '11.5px', color: '#636366', lineHeight: 1.5 }}>
+            Aplx connects directly from your browser to the AI provider without intermediate proxy servers.
+          </div>
+
+          {/* Action Choices */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onGoToSettings(providerId);
+              }}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                background: '#f5f5f7',
+                color: '#000000',
+                fontWeight: 600,
+                fontSize: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <KeyRound size={14} /> Add {provider.name} Key in Settings
+              </span>
+              <ArrowRight size={14} />
+            </button>
+
+            {/* Local offline alternative */}
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onSwitchToLocal(localDetection?.recommendedModel?.id || 'llama3.3');
+              }}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#f5f5f7',
+                fontSize: '12px',
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Cpu size={14} style={{ color: '#2997ff' }} />
+                <span>Use Offline Model (Ollama / LM Studio)</span>
+              </span>
+              <span style={{ fontSize: '10px', color: '#86868b', fontFamily: 'var(--font-mono)' }}>No Key</span>
+            </button>
+
+            {/* Other configured providers if available */}
+            {configuredProviders.length > 0 && (
+              <div style={{ paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <div style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: '#86868b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                  Configured Providers with Saved Keys
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {configuredProviders.map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onGoToSettings(p.id);
+                      }}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        fontSize: '11px',
+                        color: '#f5f5f7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Sparkles size={11} style={{ color: '#2997ff' }} />
+                      <span>{p.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

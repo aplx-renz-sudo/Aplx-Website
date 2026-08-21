@@ -92,25 +92,27 @@ export function KeyboardShortcutsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-xl animate-fade-in"
+      className="modal-overlay"
       onClick={e => {
         if (e.target === e.currentTarget) onClose();
       }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shortcuts-title"
     >
       <div
-        className="w-full max-w-lg rounded-2xl bg-[#0c101a]/95 border border-white/[0.1] shadow-2xl text-[#f5f5f7] overflow-hidden animate-modal-pop relative flex flex-col max-h-[85vh]"
-        role="dialog"
-        aria-label="Keyboard Shortcuts"
+        className="modal-dialog"
+        style={{ maxWidth: '540px' }}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.1] flex items-center justify-center text-[#f5f5f7]">
+        <div className="modal-header">
+          <div className="flex items-center gap-2.5" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.1] flex items-center justify-center text-[#f5f5f7]" style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
               <Command size={16} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-[#f5f5f7]">Keyboard Shortcuts</h3>
+              <div className="flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 id="shortcuts-title" className="text-sm font-semibold text-[#f5f5f7]">Keyboard Shortcuts</h3>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.06] text-[#86868b]">
                   {isMac ? 'macOS' : 'Windows / Linux'}
                 </span>
@@ -119,29 +121,29 @@ export function KeyboardShortcutsModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-[#86868b] hover:text-[#f5f5f7] hover:bg-white/[0.08] transition-colors"
+            className="modal-close-btn"
             aria-label="Close modal"
           >
-            <X size={16} />
+            <X size={15} />
           </button>
         </div>
 
         {/* Search Bar */}
-        <div className="px-5 pt-3 pb-2">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08]">
-            <Search size={14} className="text-[#636366] flex-none" />
+        <div style={{ padding: '12px 20px 8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <Search size={14} className="text-[#636366]" style={{ color: '#636366', flexShrink: 0 }} />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search shortcuts…"
-              className="w-full bg-transparent text-xs text-[#f5f5f7] placeholder-[#636366] outline-none"
+              style={{ width: '100%', background: 'transparent', border: 'none', color: '#f5f5f7', fontSize: '12px', outline: 'none', padding: '0' }}
               autoFocus
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="text-[10.5px] text-[#86868b] hover:text-white px-1.5 py-0.5 rounded"
+                style={{ fontSize: '11px', color: '#86868b', cursor: 'pointer' }}
               >
                 Clear
               </button>
@@ -150,11 +152,11 @@ export function KeyboardShortcutsModal({
         </div>
 
         {/* Shortcuts List Content */}
-        <div className="px-5 py-3 overflow-y-auto space-y-4 flex-1">
+        <div style={{ padding: '8px 20px 16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {filtered.length === 0 ? (
-            <div className="text-center py-8 text-[#636366]">
-              <Command size={28} className="mx-auto mb-2 opacity-40" />
-              <p className="text-xs">No matching shortcuts found</p>
+            <div style={{ textAlign: 'center', padding: '32px 0', color: '#636366' }}>
+              <Command size={28} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
+              <p style={{ fontSize: '12px' }}>No matching shortcuts found</p>
             </div>
           ) : (
             categories.map(category => {
@@ -167,40 +169,40 @@ export function KeyboardShortcutsModal({
                   : Sparkles;
 
               return (
-                <div key={category} className="space-y-2">
-                  <div className="flex items-center gap-1.5 text-[10.5px] font-semibold text-[#86868b] uppercase tracking-wider px-1">
-                    <CategoryIcon size={13} className="text-[#2997ff]" />
+                <div key={category} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', fontWeight: 600, color: '#86868b', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0 4px' }}>
+                    <CategoryIcon size={13} style={{ color: '#2997ff' }} />
                     <span>{category}</span>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-1.5">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {items.map(s => {
                       const keyList = isMac ? s.keys.mac : s.keys.win;
                       return (
                         <div
                           key={s.id}
-                          className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05] transition-all"
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
                         >
-                          <div className="flex items-center gap-2 min-w-0 pr-2">
-                            <span className="text-xs text-[#f5f5f7]">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, paddingRight: '8px' }}>
+                            <span style={{ fontSize: '12.5px', color: '#f5f5f7' }}>
                               {s.description}
                             </span>
                             {s.badge && (
-                              <span className="text-[9.5px] font-mono px-1.5 py-0.2 rounded bg-white/[0.06] text-[#86868b]">
+                              <span style={{ fontSize: '9.5px', fontFamily: 'var(--font-mono)', padding: '2px 6px', borderRadius: '4px', background: 'rgba(41, 151, 255, 0.15)', color: '#70b6ff' }}>
                                 {s.badge}
                               </span>
                             )}
                           </div>
 
                           {/* Keycap Display */}
-                          <div className="flex items-center gap-1 flex-none">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                             {keyList.map((k, idx) => (
-                              <div key={idx} className="flex items-center gap-1">
-                                <kbd className="px-2 py-1 rounded-md bg-white/[0.08] border border-white/[0.12] text-[#f5f5f7] font-mono text-[11px] font-medium shadow-sm inline-flex items-center justify-center min-w-[24px]">
+                              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <kbd style={{ padding: '3px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#f5f5f7', fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, boxShadow: '0 1px 3px rgba(0,0,0,0.3)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px' }}>
                                   {k}
                                 </kbd>
                                 {idx < keyList.length - 1 && (
-                                  <span className="text-[#636366] text-xs">+</span>
+                                  <span style={{ color: '#636366', fontSize: '11px' }}>+</span>
                                 )}
                               </div>
                             ))}
@@ -216,9 +218,9 @@ export function KeyboardShortcutsModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-5 py-3 border-t border-white/[0.06] bg-white/[0.01] flex items-center justify-between text-[11px] text-[#86868b]">
+        <div style={{ padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.01)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: '#86868b' }}>
           <span>Ready for rapid input</span>
-          <span className="font-mono text-[10.5px]">Press <kbd className="px-1 py-0.5 rounded bg-white/[0.08] text-[#f5f5f7]">Esc</kbd> to close</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10.5px' }}>Press <kbd style={{ padding: '2px 6px', borderRadius: '4px', background: 'rgba(255,255,255,0.08)', color: '#f5f5f7' }}>Esc</kbd> to close</span>
         </div>
       </div>
     </div>

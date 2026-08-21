@@ -28,6 +28,8 @@ export type PetId = 'fox' | 'cat' | 'bunny' | 'dragon' | 'slime' | 'robo' | 'shi
 export type PetPosition = 'bottom-right' | 'composer' | 'header' | 'floating';
 export type TokenSaverMode = 'off' | 'light' | 'balanced' | 'aggressive';
 
+export type GradientTarget = 'background' | 'landing' | 'both';
+
 export type CustomThemeConfig = {
   enabled: boolean;
   gradientStart: string;
@@ -36,6 +38,7 @@ export type CustomThemeConfig = {
   accentColor: string;
   glowIntensity: number;
   backgroundTint: string;
+  gradientTarget?: GradientTarget;
 };
 
 export type PersonaId =
@@ -59,6 +62,7 @@ export type UserProfile = {
 
 export type Preferences = {
   theme: ThemePreset;
+  themeGradientTarget?: GradientTarget;
   customTheme: CustomThemeConfig;
   font: FontPreset;
   bubbleStyle: BubbleStyle;

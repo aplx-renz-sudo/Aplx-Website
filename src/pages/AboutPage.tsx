@@ -213,8 +213,26 @@ export function AboutPage({ launch, home, settings, motion }: AboutPageProps) {
         </div>
       </section>
 
-      <footer className="about-footer">
-        Aplx AI™ · Built independently with curiosity, code, and far too many AI assistants.
+      <footer className="about-footer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+        <div>Aplx AI™ · Built independently with curiosity, code, and far too many AI assistants.</div>
+        <div
+          style={{
+            fontSize: '12px',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 700,
+            color: '#fef08a',
+            letterSpacing: '0.06em',
+            background: 'rgba(245, 158, 11, 0.14)',
+            border: '1.5px solid rgba(251, 191, 36, 0.85)',
+            padding: '8px 18px',
+            borderRadius: '9999px',
+            boxShadow: '0 0 20px rgba(251, 191, 36, 0.35), inset 0 0 8px rgba(251, 191, 36, 0.15)',
+            textShadow: '0 0 10px rgba(250, 204, 21, 0.6)',
+            textTransform: 'uppercase',
+          }}
+        >
+          WEBSITE FOR APLX :- CURRENT VERSION, V1.7
+        </div>
       </footer>
     </main>
   );

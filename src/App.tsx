@@ -41,6 +41,8 @@ import {
   Cpu,
   User,
   UserCheck,
+  ExternalLink,
+  AlertTriangle,
 } from 'lucide-react';
 import { createProvider, isProviderReady } from './providers';
 import type { ChatTurn } from './providers/types';
@@ -78,13 +80,14 @@ import {
   type Conversation,
 } from './lib/conversations';
 import { startSpeechRecognition, speakText, stopSpeaking, isSpeechRecognitionSupported } from './lib/speech';
-import { loadUserProfile, saveUserProfile, isUserSetupComplete } from './lib/userProfile';
+import { loadUserProfile, saveUserProfile, isUserSetupComplete, removeUserProfile } from './lib/userProfile';
 import type { View, Message, Preferences, TokenStats, UserProfile } from './types';
 
 const preferenceKey = 'aplx:preferences:v2';
 
 const defaultPreferences: Preferences = {
   theme: 'black',
+  themeGradientTarget: 'both',
   customTheme: {
     enabled: false,
     gradientStart: '#1e053a',
@@ -93,6 +96,7 @@ const defaultPreferences: Preferences = {
     accentColor: '#8ea8ff',
     glowIntensity: 50,
     backgroundTint: '#040711',
+    gradientTarget: 'both',
   },
   font: 'dm-sans',
   bubbleStyle: 'glass',
@@ -346,20 +350,33 @@ export default function App() {
     stopSpeaking();
   };
 
-  const handleDeleteConversation = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (conversations.length === 1) {
-      handleCreateNewChat();
-      return;
-    }
+  const handleDeleteConversation = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     const remaining = conversations.filter(c => c.id !== id);
     setConversations(remaining);
     saveConversations(remaining);
-    if (activeConvId === id) {
+    if (remaining.length === 0) {
+      setActiveConvId('');
+      setActiveConversationId('');
+    } else if (activeConvId === id) {
       const nextId = remaining[0].id;
       setActiveConvId(nextId);
       setActiveConversationId(nextId);
     }
+  };
+
+  const handleRemoveAccount = () => {
+    removeUserProfile();
+    setUserProfile(null);
+    setShowAccountModal(false);
+    // Clear conversations and reset state
+    setConversations([]);
+    saveConversations([]);
+    setActiveConvId('');
+    setActiveConversationId('');
+    setInput('');
+    setView('landing');
+    if (preferences.soundEffects) sounds.playClick();
   };
 
   const handleRenameConversation = (id: string, newTitle: string) => {
@@ -657,24 +674,61 @@ export default function App() {
     messagesEnd.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isThinking]);
 
-  // Dynamic Theme CSS Custom Properties
+  // Dynamic Theme CSS Custom Properties & Gradients
   const themeClass = useMemo(() => {
     if (preferences.customTheme?.enabled) return 'custom-theme-active';
     return `theme-${preferences.theme}`;
   }, [preferences.theme, preferences.customTheme]);
 
   const customThemeStyles = useMemo(() => {
-    if (!preferences.customTheme?.enabled) return {};
-    const ct = preferences.customTheme;
-    return {
-      '--app-custom-bg': ct.backgroundTint,
-      '--app-custom-gradient-start': ct.gradientStart,
-      '--app-custom-gradient-end': ct.gradientEnd,
-      '--app-custom-accent': ct.accentColor,
-      '--app-custom-glow': ct.glowIntensity,
-      '--theme-glow': `${ct.accentColor}44`,
-    } as React.CSSProperties;
-  }, [preferences.customTheme]);
+    const PRESET_MAP: Record<string, { start: string; mid: string; accent: string }> = {
+      black: { start: '#030303', mid: '#0a0a0e', accent: '#9eb8ff' },
+      midnight: { start: '#030714', mid: '#0c1836', accent: '#7ba4ff' },
+      cyberpunk: { start: '#0a0314', mid: '#250838', accent: '#ff007f' },
+      emerald: { start: '#020c06', mid: '#052a17', accent: '#00f59b' },
+      nebula: { start: '#0a0418', mid: '#251040', accent: '#b388ff' },
+      solar: { start: '#120700', mid: '#2f1503', accent: '#ff9f43' },
+      crimson: { start: '#120307', mid: '#320914', accent: '#ff4757' },
+      polar: { start: '#06090e', mid: '#121c2c', accent: '#70a1ff' },
+    };
+
+    let gradientStart = '#030714';
+    let gradientEnd = '#0c1836';
+    let accentColor = '#7ba4ff';
+    let target = preferences.themeGradientTarget || 'both';
+
+    if (preferences.customTheme?.enabled) {
+      const ct = preferences.customTheme;
+      gradientStart = ct.gradientStart || '#1e053a';
+      gradientEnd = ct.gradientEnd || '#003b46';
+      accentColor = ct.accentColor || '#8ea8ff';
+      target = ct.gradientTarget || target || 'both';
+    } else {
+      const p = PRESET_MAP[preferences.theme] || PRESET_MAP.midnight;
+      gradientStart = p.start;
+      gradientEnd = p.mid;
+      accentColor = p.accent;
+    }
+
+    const gradientBgCss = `radial-gradient(ellipse at 50% 15%, ${gradientEnd} 0%, ${gradientStart} 70%, #03050a 100%)`;
+    const landingGradientCss = `radial-gradient(circle at 45% 30%, ${gradientEnd}99 0%, ${gradientStart}66 50%, transparent 85%)`;
+
+    const styles: Record<string, string> = {
+      '--app-custom-gradient-start': gradientStart,
+      '--app-custom-gradient-end': gradientEnd,
+      '--app-custom-accent': accentColor,
+      '--theme-glow': `${accentColor}44`,
+    };
+
+    if (target === 'background' || target === 'both') {
+      styles['--active-bg-gradient'] = gradientBgCss;
+    }
+    if (target === 'landing' || target === 'both') {
+      styles['--landing-bg-gradient'] = landingGradientCss;
+    }
+
+    return styles as React.CSSProperties;
+  }, [preferences.customTheme, preferences.theme, preferences.themeGradientTarget]);
 
   return (
     <div
@@ -702,6 +756,7 @@ export default function App() {
         isOpen={showAccountModal}
         onComplete={handleAccountComplete}
         onClose={() => setShowAccountModal(false)}
+        onRemoveAccount={handleRemoveAccount}
         existingProfile={userProfile}
         soundEnabled={preferences.soundEffects}
       />
@@ -1065,104 +1120,128 @@ export default function App() {
                 <button className="icon playful-pop" title="Prompt Library (Ctrl+K)" onClick={() => setShowPromptLib(true)}>
                   <Sparkles size={18} />
                 </button>
-                <button className="icon playful-pop" title="Clear conversation" onClick={handleCreateNewChat}>
-                  <Trash2 size={18} />
-                </button>
+                {conversations.length > 0 && (
+                  <button className="icon playful-pop" title="Clear conversation" onClick={handleCreateNewChat}>
+                    <Trash2 size={18} />
+                  </button>
+                )}
                 <button className="icon playful-pop" title="Settings" onClick={() => goSettings('provider')}>
                   <Settings size={18} />
                 </button>
               </div>
             </header>
 
-            {/* Centered Chat Messages */}
-            <section className="messages">
-              {messages.map(m => (
-                <MessageView
-                  key={m.id}
-                  message={m}
-                  userProfile={userProfile}
-                  regenerate={() => regenerate(m.id)}
-                  isThinking={isThinking && streaming && m.role === 'model' && !m.content}
-                  thinkingStyle={preferences.thinkingStyle}
-                  showThinkingTimer={preferences.showThinkingTimer}
-                  onSpeak={() => toggleReadAloud(m)}
-                  isSpeaking={speakingMsgId === m.id}
-                  onEditPrompt={newPrompt => send(newPrompt, m.id)}
-                />
-              ))}
-
-              {messages.length === 1 && (
-                <PromptDeck
-                  choose={send}
-                  showGuideBanner={!userProfile && !guideDismissed}
-                  onOpenGuide={() => setShowTour(true)}
-                  onDismissGuide={() => {
-                    setGuideDismissed(true);
-                    try {
-                      localStorage.setItem('aplx:guide_dismissed', 'true');
-                    } catch {}
-                  }}
-                />
-              )}
-              <div ref={messagesEnd} />
-            </section>
-
-            <div className="relative">
-              {/* Composer-docked Pet */}
-              {preferences.petPosition === 'composer' && (
-                <PetCompanion
-                  petId={preferences.petId}
-                  position="composer"
-                  size={preferences.petSize}
-                  mood={petMood}
-                  soundEnabled={preferences.soundEffects}
-                  interactive={preferences.petInteractive}
-                />
-              )}
-
-              {/* Attachment Pill Indicator */}
-              {attachmentName && (
-                <div className="max-w-[820px] mx-auto mb-1 px-4 flex items-center gap-2 text-xs text-[#8ea8ff]">
-                  <span className="bg-[#141b2e] px-2 py-0.5 rounded border border-[#273554] flex items-center gap-1.5">
-                    <Paperclip size={12} /> Attached: {attachmentName}
-                    <button
-                      onClick={() => setAttachmentName(null)}
-                      className="text-[#6d80a6] hover:text-white ml-1"
-                    >
-                      ×
-                    </button>
-                  </span>
+            {conversations.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-fade-in my-auto">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center text-indigo-400 mb-4 shadow-lg shadow-indigo-950/40">
+                  <MessageSquarePlus size={32} />
                 </div>
-              )}
+                <h3 className="text-lg font-bold text-white mb-2">No Active Conversation</h3>
+                <p className="text-xs text-[#8094b8] max-w-sm mb-6 leading-relaxed">
+                  You deleted all conversations. Click below to start a fresh, private discussion with your chosen AI models.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCreateNewChat}
+                  className="primary playful-pop inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold shadow-lg shadow-indigo-950/60 cursor-pointer"
+                >
+                  <MessageSquarePlus size={18} />
+                  <span>Start a conversation!</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Centered Chat Messages */}
+                <section className="messages">
+                  {messages.map(m => (
+                    <MessageView
+                      key={m.id}
+                      message={m}
+                      userProfile={userProfile}
+                      regenerate={() => regenerate(m.id)}
+                      isThinking={isThinking && streaming && m.role === 'model' && !m.content}
+                      thinkingStyle={preferences.thinkingStyle}
+                      showThinkingTimer={preferences.showThinkingTimer}
+                      onSpeak={() => toggleReadAloud(m)}
+                      isSpeaking={speakingMsgId === m.id}
+                      onEditPrompt={newPrompt => send(newPrompt, m.id)}
+                    />
+                  ))}
 
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                className="hidden"
-                accept=".txt,.md,.js,.ts,.tsx,.py,.json,.csv,.sql,.html,.css"
-              />
+                  {messages.length === 1 && (
+                    <PromptDeck
+                      choose={send}
+                      showGuideBanner={!userProfile && !guideDismissed}
+                      onOpenGuide={() => setShowTour(true)}
+                      onDismissGuide={() => {
+                        setGuideDismissed(true);
+                        try {
+                          localStorage.setItem('aplx:guide_dismissed', 'true');
+                        } catch {}
+                      }}
+                    />
+                  )}
+                  <div ref={messagesEnd} />
+                </section>
 
-              <Composer
-                value={input}
-                change={handleInputChange}
-                send={() => send()}
-                stop={() => {
-                  stop.current = true;
-                  setStreaming(false);
-                  setIsThinking(false);
-                  stopSpeaking();
-                }}
-                streaming={streaming}
-                sendOnEnter={preferences.sendOnEnter}
-                onOpenPrompts={() => setShowPromptLib(true)}
-                onOpenHelp={() => setShowTour(true)}
-                onToggleVoice={toggleVoiceInput}
-                isRecordingVoice={isRecordingVoice}
-                onAttachFile={() => fileInputRef.current?.click()}
-                onOpenTokenSaver={() => goSettings('tokensaver')}
-              />
-            </div>
+                <div className="relative">
+                  {/* Composer-docked Pet */}
+                  {preferences.petPosition === 'composer' && (
+                    <PetCompanion
+                      petId={preferences.petId}
+                      position="composer"
+                      size={preferences.petSize}
+                      mood={petMood}
+                      soundEnabled={preferences.soundEffects}
+                      interactive={preferences.petInteractive}
+                    />
+                  )}
+
+                  {/* Attachment Pill Indicator */}
+                  {attachmentName && (
+                    <div className="max-w-[820px] mx-auto mb-1 px-4 flex items-center gap-2 text-xs text-[#8ea8ff]">
+                      <span className="bg-[#141b2e] px-2 py-0.5 rounded border border-[#273554] flex items-center gap-1.5">
+                        <Paperclip size={12} /> Attached: {attachmentName}
+                        <button
+                          onClick={() => setAttachmentName(null)}
+                          className="text-[#6d80a6] hover:text-white ml-1"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    </div>
+                  )}
+
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    accept=".txt,.md,.js,.ts,.tsx,.py,.json,.csv,.sql,.html,.css"
+                  />
+
+                  <Composer
+                    value={input}
+                    change={handleInputChange}
+                    send={() => send()}
+                    stop={() => {
+                      stop.current = true;
+                      setStreaming(false);
+                      setIsThinking(false);
+                      stopSpeaking();
+                    }}
+                    streaming={streaming}
+                    sendOnEnter={preferences.sendOnEnter}
+                    onOpenPrompts={() => setShowPromptLib(true)}
+                    onOpenHelp={() => setShowTour(true)}
+                    onToggleVoice={toggleVoiceInput}
+                    isRecordingVoice={isRecordingVoice}
+                    onAttachFile={() => fileInputRef.current?.click()}
+                    onOpenTokenSaver={() => goSettings('tokensaver')}
+                  />
+                </div>
+              </>
+            )}
           </main>
         </>
       )}
@@ -1270,11 +1349,11 @@ function Landing({
         <div className="wordmark">
           <span>A</span> APLX
         </div>
-        <div className="flex items-center gap-4">
-          <button onClick={about} className="playful-pop text-xs text-[#a0b0d0] hover:text-white px-3 py-1.5">
+        <div className="landing-nav-links" style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
+          <button onClick={about} className="landing-nav-btn playful-pop" style={{ fontSize: '13px', padding: '7px 14px', borderRadius: '8px', color: '#a0b0d0', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             About
           </button>
-          <button onClick={privacy} className="playful-pop text-xs text-[#a0b0d0] hover:text-white px-3 py-1.5">
+          <button onClick={privacy} className="landing-nav-btn playful-pop" style={{ fontSize: '13px', padding: '7px 14px', borderRadius: '8px', color: '#a0b0d0', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             Privacy
           </button>
           <button onClick={launch} className="nav-launch playful-pop">
@@ -1285,7 +1364,7 @@ function Landing({
       <div className="hero animate-float-hero">
         <div className="eyebrow flex items-center justify-center gap-2">
           <Sparkles size={14} className="text-[#8ea8ff] animate-twinkle" />
-          <span>PRIVATE AI WORKSTATION</span>
+          <span>YOUR PERSONAL DOCK FOR AI APIS</span>
           {/* Playful Floating Pet Mascot on Hero */}
           <span
             onClick={handleMascotClick}
@@ -1305,36 +1384,81 @@ function Landing({
           </span>
         </div>
         <h1>
-          AI, on <i className="lively-shimmer-text">your</i> terms.
+          The private dock for <i className="lively-shimmer-text">all your AI APIs.</i>
         </h1>
         <p>
-          Aplx gives you multi-model AI flexibility, interactive companion pets, token saving algorithms, prompt templates, and direct local browser routing.
+          Aplx is a universal AI dock and intuitive guide for anyone who wants to run their own API keys easily. No middleman servers — your credentials stay 100% safe in your browser.
         </p>
+
+        {/* Under Development Glowing Yellow Area */}
+        <div
+          className="under-dev-banner"
+          style={{
+            margin: '22px 0 18px 0',
+            padding: '12px 18px',
+            borderRadius: '14px',
+            background: 'rgba(245, 158, 11, 0.13)',
+            border: '1.5px solid rgba(251, 191, 36, 0.9)',
+            boxShadow: '0 0 24px rgba(251, 191, 36, 0.4), 0 0 48px rgba(245, 158, 11, 0.22), inset 0 0 12px rgba(251, 191, 36, 0.15)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '12px',
+            maxWidth: '580px',
+            width: '100%',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          }}
+        >
+          <AlertTriangle
+            size={20}
+            className="under-dev-icon"
+            style={{
+              color: '#fde047',
+              filter: 'drop-shadow(0 0 8px rgba(250, 204, 21, 0.85))',
+              flexShrink: 0,
+            }}
+          />
+          <span
+            className="under-dev-text"
+            style={{
+              fontSize: '12px',
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              color: '#fef08a',
+              textTransform: 'uppercase',
+              lineHeight: 1.45,
+              textShadow: '0 0 12px rgba(250, 204, 21, 0.65)',
+            }}
+          >
+            Still under development.. (SETTINGS IN CONSTRUCTION, WILL BE READY SOON, API FUNCTION WORKS FINE)
+          </span>
+        </div>
+
         <div className="hero-actions">
           <button className="primary playful-pop" onClick={launch}>
-            Launch Aplx <ArrowUp size={16} />
+            Launch Workspace <ArrowUp size={16} />
           </button>
           {onOpenGuide && (
             <button className="secondary playful-pop" onClick={onOpenGuide}>
-              <Gamepad2 size={16} className="text-cyan-400" /> Interactive Guide
+              <Gamepad2 size={16} className="text-cyan-400" /> Easy API Setup Guide
             </button>
           )}
           <button className="secondary playful-pop" onClick={settings}>
-            <KeyRound size={16} /> Connect a provider
+            <KeyRound size={16} /> Plug in an API Key
           </button>
         </div>
         <div className="trust">
           <span className="playful-pop">
-            <ShieldCheck size={17} /> 100% Offline Profile & Key Security
+            <ShieldCheck size={17} /> 100% Private (Keys Stored in Browser)
           </span>
           <span className="playful-pop">
-            <Zap size={17} /> Token Saver ~22%
+            <KeyRound size={17} /> One Dock, 8+ Top AI Providers
           </span>
           <span className="playful-pop">
-            <Orbit size={17} /> Browser → Provider Direct
+            <Orbit size={17} /> Direct Browser → API Routing
           </span>
           <span className="playful-pop">
-            <Sparkles size={17} /> Companions & Prompt Library
+            <Zap size={17} /> Built-in Token Saver & Guidance
           </span>
         </div>
       </div>
@@ -1485,11 +1609,6 @@ function MessageView({
             {message.role === 'user' ? (userProfile?.name || 'You') : 'Aplx'}{' '}
             <time>{message.time}</time>
           </div>
-          {message.tokensSaved && message.tokensSaved > 0 ? (
-            <span className="text-[10px] text-emerald-400 font-mono bg-emerald-950/40 border border-emerald-800/30 px-1.5 py-0.5 rounded">
-              ⚡ Saved ~{message.tokensSaved} tokens
-            </span>
-          ) : null}
         </div>
 
         {/* Thinking Indicator Animation */}
@@ -1498,7 +1617,6 @@ function MessageView({
             style={thinkingStyle}
             showTimer={showThinkingTimer}
             modelName="Aplx"
-            tokensSaved={message.tokensSaved}
           />
         ) : isEditing ? (
           <form onSubmit={handleSaveEdit} className="my-2 space-y-2">
@@ -1601,34 +1719,38 @@ function Composer({
     <div className="composer-wrap">
       <div className="composer">
         {/* Helper Action Quick Ribbon */}
-        <div className="flex items-center gap-3 mb-2">
-          <button
-            type="button"
-            onClick={onOpenHelp}
-            className="playful-pop text-[11px] font-medium px-3 py-1 rounded-full bg-[#121827] border border-[#2b395b] hover:border-[#8ea8ff] text-[#9db2dc] hover:text-[#edf3ff] flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Interactive Help & Guide"
-          >
-            <HelpCircle size={12} className="text-cyan-400" />
-            <span>Guide & Help</span>
-          </button>
-          <button
-            type="button"
-            onClick={onOpenPrompts}
-            className="playful-pop text-[11px] font-medium px-3 py-1 rounded-full bg-[#121827] border border-[#222c42] hover:border-[#8ea8ff] text-[#7d92bb] hover:text-[#edf3ff] flex items-center gap-1.5 transition-all cursor-pointer"
-            title="Prompt Template Library"
-          >
-            <Sparkles size={12} className="text-amber-400" />
-            <span>Prompt Library (Ctrl+K)</span>
-          </button>
-          <button
-            type="button"
-            onClick={onOpenTokenSaver}
-            className="playful-pop text-[11px] font-medium px-3 py-1 rounded-full bg-[#0c1616] border border-[#1b3a2e] text-emerald-400 flex items-center gap-1.5 transition-all ml-auto cursor-pointer"
-            title="Token Saver Active"
-          >
-            <Zap size={11} />
-            <span>Token Saver Active</span>
-          </button>
+        <div className="composer-ribbon">
+          <div className="composer-ribbon-left">
+            <button
+              type="button"
+              onClick={onOpenHelp}
+              className="ribbon-pill ribbon-pill-guide playful-pop"
+              title="Interactive Help & Guide Walkthrough"
+            >
+              <HelpCircle size={13} style={{ color: '#22d3ee' }} />
+              <span>Guide & Help</span>
+            </button>
+            <button
+              type="button"
+              onClick={onOpenPrompts}
+              className="ribbon-pill ribbon-pill-prompts playful-pop"
+              title="Prompt Template Library (Ctrl+K)"
+            >
+              <Sparkles size={13} style={{ color: '#fbbf24' }} />
+              <span>Prompt Library</span>
+            </button>
+          </div>
+          <div className="composer-ribbon-right">
+            <button
+              type="button"
+              onClick={onOpenTokenSaver}
+              className="ribbon-pill ribbon-pill-tokensaver playful-pop"
+              title="Token Saver Optimizer Active"
+            >
+              <Zap size={12} style={{ color: '#34d399' }} />
+              <span>Token Saver Active</span>
+            </button>
+          </div>
         </div>
 
         <div className="flex items-end gap-2">
@@ -1745,7 +1867,7 @@ function FullSettingsModal({
       title: 'Security & Platform',
       items: [
         { id: 'privacy' as const, label: 'Data & Privacy Hub', icon: ShieldCheck, badge: '100% Client', color: 'text-emerald-400' },
-        { id: 'about' as const, label: 'About & Ecosystem', icon: Orbit, badge: 'v0.2.0', color: 'text-blue-400' },
+        { id: 'about' as const, label: 'About & Ecosystem', icon: Orbit, badge: 'v1.7', color: 'text-blue-400' },
       ],
     },
   ];
@@ -1791,12 +1913,14 @@ function FullSettingsModal({
                         onClick={() => setTab(t.id)}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <Icon size={16} className={`${t.color} flex-none`} />
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-none ${isSelected ? 'bg-white/20' : 'bg-white/[0.05] border border-white/[0.08]'}`}>
+                            <Icon size={13} className={`${t.color}`} />
+                          </div>
                           <span className="truncate">{t.label}</span>
                         </div>
                         {t.badge && (
                           <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-medium flex-none ${
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-medium flex-none ${
                               isSelected
                                 ? 'bg-white/20 text-white'
                                 : 'bg-[#121a30] text-[#7f94be] border border-[#202e4f]'
@@ -1891,7 +2015,7 @@ function FullSettingsModal({
                 <div className="about-grid">
                   <div>
                     <small>VERSION</small>
-                    <b>0.2.0 Peak Edition</b>
+                    <b>V1.7 Edition</b>
                   </div>
                   <div>
                     <small>BUILT BY</small>
@@ -1902,8 +2026,10 @@ function FullSettingsModal({
                     <b>Client-Side · Direct Routing</b>
                   </div>
                 </div>
-                <button className="about-story-link playful-pop" onClick={onAbout}>
-                  Read the full story <ChevronLeft size={14} style={{ transform: 'rotate(180deg)' }} />
+                <button type="button" className="about-story-btn playful-pop" onClick={onAbout}>
+                  <BookOpen size={15} />
+                  <span>Read the full story</span>
+                  <ChevronLeft size={14} style={{ transform: 'rotate(180deg)' }} />
                 </button>
                 <div className="credits">
                   <div className="section-kicker">CREDITS</div>
@@ -1911,13 +2037,35 @@ function FullSettingsModal({
                   <p>
                     R3nz (developer) , Github copilot, Claude Sonnet and Haiku and Opus models, CodeX (GPT-5.6), Kimi K3, GPT-4, minimax-m3, Grok, Le chat Mistral, Gemini, and many more AIs!
                   </p>
-                  <a href="https://github.com/Korentic/Aplx" target="_blank" rel="noreferrer" className="playful-pop">
-                    Explore & install Aplx on GitHub ↗
+                  <a href="https://github.com/Korentic/Aplx" target="_blank" rel="noreferrer" className="about-github-btn playful-pop">
+                    <ExternalLink size={15} />
+                    <span>Explore & install Aplx on GitHub</span>
+                    <span className="text-xs text-[#8ea8ff]">↗</span>
                   </a>
                 </div>
                 <p className="fine">
                   Aplx Desktop supports offline + online workflows. Aplx Web runs purely in your browser and connects only to the provider credentials you configure.
                 </p>
+                <div
+                  style={{
+                    marginTop: '16px',
+                    padding: '12px 18px',
+                    borderRadius: '12px',
+                    background: 'rgba(245, 158, 11, 0.14)',
+                    border: '1.5px solid rgba(251, 191, 36, 0.85)',
+                    boxShadow: '0 0 20px rgba(251, 191, 36, 0.35), inset 0 0 8px rgba(251, 191, 36, 0.12)',
+                    textAlign: 'center',
+                    fontSize: '12px',
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700,
+                    color: '#fef08a',
+                    letterSpacing: '0.06em',
+                    textShadow: '0 0 10px rgba(250, 204, 21, 0.6)',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  WEBSITE FOR APLX :- CURRENT VERSION, V1.7
+                </div>
               </div>
             )}
           </div>

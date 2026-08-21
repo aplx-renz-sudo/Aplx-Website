@@ -97,3 +97,11 @@ export function isUserSetupComplete(): boolean {
   return Boolean(profile && profile.isSetupComplete);
 }
 
+export function removeUserProfile(): void {
+  try {
+    localStorage.removeItem(PROFILE_KEY);
+  } catch (err) {
+    console.warn('Could not remove user profile from localStorage', err);
+  }
+}
+

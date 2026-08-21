@@ -1,4 +1,4 @@
-import type { AIProvider, ProviderMessage } from './types';
+import type { AIProvider, ChatTurn } from './types';
 
 /**
  * In-Browser Offline Nano (1M Parameters Heuristic & Thinking Engine)
@@ -17,15 +17,15 @@ export class OfflineNanoProvider implements AIProvider {
     this.model = model;
   }
 
-  async testConnection(): Promise<boolean> {
-    return true; // Always available offline
+  async testConnection(): Promise<void> {
+    // Always available offline
   }
 
   async stream(
     prompt: string,
-    history: ProviderMessage[],
+    history: ChatTurn[],
     onChunk: (text: string) => void
-  ): Promise<string> {
+  ): Promise<void> {
     messageCounter++;
 
     // Generate thinking trace & response based on user prompt
@@ -76,8 +76,6 @@ export class OfflineNanoProvider implements AIProvider {
         await this.delay(10);
       }
     }
-
-    return fullOutput;
   }
 
   private delay(ms: number): Promise<void> {
@@ -92,7 +90,7 @@ export class OfflineNanoProvider implements AIProvider {
 
   private generateResponse(
     prompt: string,
-    history: ProviderMessage[]
+    history: ChatTurn[]
   ): { thinkingSteps: string[]; answer: string } {
     const p = prompt.trim().toLowerCase();
 

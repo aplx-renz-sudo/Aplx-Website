@@ -1,36 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, KeyRound, Sparkles, RefreshCw, CheckCircle2, AlertTriangle, Cpu, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, Sparkles, RefreshCw, CheckCircle2, AlertTriangle, Cpu, ShieldCheck, Layers, Settings2, ArrowRight, Zap, Check } from 'lucide-react';
 import type { ProviderConfig } from '../lib/credential';
 import { findProviderByModel, getProvider, PROVIDER_LIST, type ProviderId } from '../providers/registry';
 import { createProvider, isProviderReady } from '../providers';
 import { detectLocalOfflineModels, getCachedLocalModels, type LocalDetectionResult } from '../lib/localModelDetector';
-
-function ModelSelect({
-  models,
-  value,
-  onChange,
-  className,
-}: {
-  models: { id: string; label: string }[];
-  value: string;
-  onChange: (v: string) => void;
-  className?: string;
-}) {
-  return (
-    <select
-      className={className}
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      aria-label="Model"
-    >
-      {models.map(m => (
-        <option key={m.id} value={m.id}>
-          {m.label}
-        </option>
-      ))}
-    </select>
-  );
-}
 
 type ProviderSettingsProps = {
   config: ProviderConfig;
@@ -46,6 +19,7 @@ export function ProviderSettings({ config, onChange, onSave }: ProviderSettingsP
   );
   const [isScanningLocal, setIsScanningLocal] = useState(false);
   const [localDetection, setLocalDetection] = useState<LocalDetectionResult | null>(getCachedLocalModels);
+  const [activeTab, setActiveTab] = useState<'both' | 'providers' | 'models'>('both');
 
   useEffect(() => {
     setDraft(config);
@@ -86,29 +60,27 @@ export function ProviderSettings({ config, onChange, onSave }: ProviderSettingsP
     const existingKey = draft.apiKeys?.[id] || (id === draft.provider ? draft.apiKey : '');
     const existingBaseUrl = draft.baseUrls?.[id] || def.baseUrl || 'http://localhost:11434';
 
-    setDraft(prev => ({
-      ...prev,
+    const updated = {
+      ...draft,
       provider: id,
       apiKey: existingKey,
       baseUrl: existingBaseUrl,
-      model: def.models.some(m => m.id === prev.model) ? prev.model : def.defaultModel,
-    }));
+      model: def.models.some(m => m.id === draft.model) ? draft.model : def.defaultModel,
+    };
+    setDraft(updated);
+    onChange(updated);
   };
 
   const handleApplyDetectedLocalModel = (modelId: string) => {
     pickProvider('ollama');
-    setDraft(prev => ({
-      ...prev,
-      provider: 'ollama',
-      model: modelId,
-      baseUrl: localDetection?.baseUrl || 'http://localhost:11434',
-    }));
-    onChange({
+    const updated = {
       ...draft,
-      provider: 'ollama',
+      provider: 'ollama' as const,
       model: modelId,
       baseUrl: localDetection?.baseUrl || 'http://localhost:11434',
-    });
+    };
+    setDraft(updated);
+    onChange(updated);
     setStatus(`Switched to ${modelId} (Offline · No Key)`);
   };
 
@@ -167,34 +139,66 @@ export function ProviderSettings({ config, onChange, onSave }: ProviderSettingsP
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-[#f5f5f7] tracking-tight">AI Engines & Providers</h2>
-        <p className="text-xs text-[#86868b] mt-1 leading-relaxed">
-          Aplx routes prompts directly from your browser to each respective provider API. Your keys and messages remain private and are never stored on external proxy servers.
-        </p>
-      </div>
-
-      {/* Provider API Key Guideline */}
-      <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-2">
-        <div className="flex items-center gap-2 text-amber-400 font-medium text-xs">
-          <AlertTriangle size={15} />
-          <span>Provider Credentials</span>
+      {/* Header & Sub-navigation to separate AI Provider vs Models */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
+        <div>
+          <h2 className="text-xl font-semibold text-[#f5f5f7] tracking-tight">AI Providers & Models</h2>
+          <p className="text-xs text-[#86868b] mt-0.5 leading-relaxed">
+            Configure your AI engines and specific models. All credentials stay directly in your browser.
+          </p>
         </div>
-        <p className="text-xs text-[#86868b] leading-relaxed">
-          Each provider requires its own API key configured on this device. Local models run entirely on your hardware with no keys needed.
-        </p>
+
+        {/* Segmented View Switcher to separate Provider and Models */}
+        <div className="flex items-center p-1 rounded-xl bg-black/40 border border-white/[0.08] flex-none">
+          <button
+            type="button"
+            onClick={() => setActiveTab('both')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              activeTab === 'both'
+                ? 'bg-blue-500 text-white shadow-md'
+                : 'text-[#86868b] hover:text-[#f5f5f7]'
+            }`}
+          >
+            <Layers size={13} />
+            <span>All Sections</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('providers')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              activeTab === 'providers'
+                ? 'bg-blue-500 text-white shadow-md'
+                : 'text-[#86868b] hover:text-[#f5f5f7]'
+            }`}
+          >
+            <Sparkles size={13} />
+            <span>1. AI Providers</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('models')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              activeTab === 'models'
+                ? 'bg-blue-500 text-white shadow-md'
+                : 'text-[#86868b] hover:text-[#f5f5f7]'
+            }`}
+          >
+            <Settings2 size={13} />
+            <span>2. Models & Key</span>
+          </button>
+        </div>
       </div>
 
-      {/* Local Model Auto-Detection */}
-      <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-3">
+      {/* Local Model Auto-Detection Banner */}
+      <div className="p-4 rounded-2xl bg-[#0e1628]/70 border border-white/[0.08] space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/[0.06] border border-white/[0.1] flex items-center justify-center text-[#2997ff] flex-none">
+            <div className="w-10 h-10 rounded-full bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-[#2997ff] flex-none">
               <Cpu size={18} />
             </div>
             <div>
               <div className="text-xs font-semibold text-[#f5f5f7] flex items-center gap-2">
-                <span>Offline Model Server Detection</span>
+                <span>Local Offline Model Detector</span>
                 {localDetection?.isAvailable && (
                   <span className="text-[10px] px-2 py-0.5 bg-emerald-500/15 text-emerald-400 rounded-full font-mono">
                     Connected ({localDetection.provider})
@@ -203,7 +207,7 @@ export function ProviderSettings({ config, onChange, onSave }: ProviderSettingsP
               </div>
               <div className="text-[11px] text-[#86868b] mt-0.5">
                 {localDetection?.isAvailable
-                  ? `Found ${localDetection.models.length} model(s) installed locally`
+                  ? `Found ${localDetection.models.length} model(s) installed on this machine`
                   : 'Scan localhost:11434 (Ollama) or localhost:1234 (LM Studio)'}
               </div>
             </div>
@@ -213,9 +217,11 @@ export function ProviderSettings({ config, onChange, onSave }: ProviderSettingsP
             type="button"
             onClick={handleScanLocalModels}
             disabled={isScanningLocal}
-            className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] text-xs text-[#f5f5f7] flex items-center justify-center gap-1.5 font-medium cursor-pointer transition-colors"
+            className="px-3.5 py-1.5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] text-xs text-[#f5f5f7] flex items-center justify-center gap-2 font-medium cursor-pointer transition-colors shadow-sm"
           >
-            <RefreshCw size={12} className={isScanningLocal ? 'animate-spin' : ''} />
+            <div className="w-4 h-4 rounded-full bg-white/[0.1] flex items-center justify-center">
+              <RefreshCw size={10} className={isScanningLocal ? 'animate-spin' : ''} />
+            </div>
             <span>{isScanningLocal ? 'Scanning…' : 'Scan Machine'}</span>
           </button>
         </div>
@@ -224,7 +230,7 @@ export function ProviderSettings({ config, onChange, onSave }: ProviderSettingsP
         {localDetection?.isAvailable && localDetection.models.length > 0 && (
           <div className="pt-2.5 border-t border-white/[0.06] space-y-2">
             <div className="text-xs text-[#2997ff] font-medium flex items-center gap-1">
-              <Sparkles size={12} /> Detected Local Models:
+              <Sparkles size={12} /> Detected Local Models on Your Computer:
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {localDetection.models.map(m => {
@@ -234,24 +240,25 @@ export function ProviderSettings({ config, onChange, onSave }: ProviderSettingsP
                     key={m.id}
                     type="button"
                     onClick={() => handleApplyDetectedLocalModel(m.id)}
-                    className={`p-2.5 rounded-xl text-left border flex items-center justify-between transition-all ${
-                      isCurrent
-                        ? 'bg-blue-500/15 border-[#2997ff] text-[#f5f5f7]'
-                        : 'bg-white/[0.02] border-white/[0.06] text-[#86868b] hover:text-[#f5f5f7] hover:border-white/[0.15]'
-                    }`}
+                    className={`model-card-btn ${isCurrent ? 'active-model' : ''}`}
                   >
-                    <div className="min-w-0 pr-2">
-                      <div className="text-xs font-medium truncate flex items-center gap-1.5">
-                        <span>{m.name}</span>
-                        {isCurrent && <CheckCircle2 size={12} className="text-[#2997ff] flex-none" />}
+                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                      <div className="circle-model-tag">
+                        <Cpu size={13} />
                       </div>
-                      <div className="text-[10.5px] text-[#636366] font-mono truncate mt-0.5">
-                        {m.id} {m.size ? `• ${m.size}` : ''}
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold truncate flex items-center gap-1.5 text-[#f5f5f7]">
+                          <span>{m.name}</span>
+                          {isCurrent && <CheckCircle2 size={12} className="text-[#2997ff] flex-none" />}
+                        </div>
+                        <div className="text-[10.5px] text-[#86868b] font-mono truncate">
+                          {m.id} {m.size ? `• ${m.size}` : ''}
+                        </div>
                       </div>
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.06] text-[#f5f5f7] flex-none border border-white/[0.08]">
-                      Use
-                    </span>
+                    <div className={`circle-radio-badge ${isCurrent ? 'checked' : ''}`}>
+                      {isCurrent && <div className="circle-radio-dot" />}
+                    </div>
                   </button>
                 );
               })}
@@ -260,172 +267,292 @@ export function ProviderSettings({ config, onChange, onSave }: ProviderSettingsP
         )}
       </div>
 
-      <div>
-        <label className="text-[10.5px] font-mono tracking-wider text-[#86868b] block mb-2">
-          SELECT PROVIDER ({PROVIDER_LIST.length} AVAILABLE)
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="list">
-          {PROVIDER_LIST.map(p => {
-            const hasKey = !!draft.apiKeys?.[p.id] || (draft.provider === p.id && !!draft.apiKey);
-            const isLocal = !p.requiresKey;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                role="listitem"
-                className={`p-3 rounded-xl border text-left transition-all flex items-start gap-3 ${
-                  draft.provider === p.id
-                    ? 'bg-white/[0.08] border-[#2997ff] text-[#f5f5f7]'
-                    : 'bg-white/[0.02] border-white/[0.06] text-[#86868b] hover:text-[#f5f5f7] hover:border-white/[0.14]'
-                }`}
-                onClick={() => pickProvider(p.id)}
-                aria-pressed={draft.provider === p.id}
-              >
-                <span className="text-lg w-8 h-8 rounded-lg bg-white/[0.05] flex items-center justify-center border border-white/[0.08] flex-none">
-                  {p.logo}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[#f5f5f7] truncate">{p.name}</span>
-                    {isLocal ? (
-                      <span className="text-[10px] text-cyan-400 font-mono">Offline</span>
-                    ) : hasKey ? (
-                      <span className="text-[10px] text-emerald-400 font-mono">Configured</span>
-                    ) : (
-                      <span className="text-[10px] text-[#636366] font-mono">Key required</span>
-                    )}
+      {/* SECTION 1: AI PROVIDER SELECTION */}
+      {(activeTab === 'both' || activeTab === 'providers') && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full bg-blue-500/20 text-[#2997ff] text-[11px] font-bold flex items-center justify-center">
+                1
+              </span>
+              <label className="text-xs font-semibold text-[#f5f5f7] tracking-tight">
+                SELECT AI PROVIDER ({PROVIDER_LIST.length} AVAILABLE)
+              </label>
+            </div>
+            <span className="text-[11px] text-[#86868b] font-mono">
+              Click any provider button to configure
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" role="list">
+            {PROVIDER_LIST.map(p => {
+              const hasKey = !!draft.apiKeys?.[p.id] || (draft.provider === p.id && !!draft.apiKey);
+              const isLocal = !p.requiresKey;
+              const isSelected = draft.provider === p.id;
+
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="button"
+                  className={`provider-card-btn ${isSelected ? 'active-provider' : ''}`}
+                  onClick={() => pickProvider(p.id)}
+                  aria-pressed={isSelected}
+                >
+                  {/* Distinct Circular Logo Avatar */}
+                  <div className="circle-avatar">
+                    {p.logo}
                   </div>
-                  <p className="text-[11px] text-[#86868b] truncate mt-0.5">{p.description}</p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
-      <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.08] space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">{active.logo}</span>
-            <div>
-              <span className="text-xs font-semibold text-[#f5f5f7] block">{active.name}</span>
-              <p className="text-[11px] text-[#86868b]">{active.description}</p>
+                  {/* Provider Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1 mb-0.5">
+                      <span className="text-xs font-bold text-[#f5f5f7] truncate">{p.name}</span>
+                      {isLocal ? (
+                        <span className="text-[10px] text-cyan-400 font-mono bg-cyan-400/10 px-1.5 py-0.5 rounded-full border border-cyan-400/20 flex-none">
+                          Offline
+                        </span>
+                      ) : hasKey ? (
+                        <span className="text-[10px] text-emerald-400 font-mono bg-emerald-400/10 px-1.5 py-0.5 rounded-full border border-emerald-400/20 flex-none">
+                          Configured
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-[#86868b] font-mono bg-white/[0.04] px-1.5 py-0.5 rounded-full flex-none">
+                          Key Needed
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-[#86868b] truncate leading-tight">{p.description}</p>
+                  </div>
+
+                  {/* Distinct Circular Radio Selection Indicator */}
+                  <div className={`circle-radio-badge ${isSelected ? 'checked' : ''}`}>
+                    {isSelected && <div className="circle-radio-dot" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 2: MODELS & CREDENTIAL CONFIGURATION (SEPARATE DEDICATED AREA) */}
+      {(activeTab === 'both' || activeTab === 'models') && (
+        <div className="p-6 rounded-3xl bg-[#0a0f1d]/90 border border-white/[0.1] shadow-2xl space-y-6">
+          {/* Header of Active Provider */}
+          <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+            <div className="flex items-center gap-3">
+              <div className="circle-avatar" style={{ width: '42px', height: '42px', minWidth: '42px', minHeight: '42px', background: 'rgba(41, 151, 255, 0.2)', borderColor: '#2997ff' }}>
+                <span className="text-xl">{active.logo}</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-blue-500/20 text-[#2997ff] text-[11px] font-bold flex items-center justify-center">
+                    2
+                  </span>
+                  <span className="text-sm font-bold text-[#f5f5f7] block">{active.name} Configuration</span>
+                </div>
+                <p className="text-xs text-[#86868b] mt-0.5">{active.description}</p>
+              </div>
+            </div>
+            <span className="text-[10px] px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-[#2997ff] font-mono font-semibold">
+              ACTIVE ENGINE
+            </span>
+          </div>
+
+          <p className="text-xs text-[#86868b] leading-relaxed bg-white/[0.02] p-3.5 rounded-2xl border border-white/[0.06]">
+            {active.instructions}
+          </p>
+
+          {/* Separate Model Selection Area with Tactile Buttons */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-[#f5f5f7] flex items-center gap-2">
+                <Sparkles size={14} className="text-amber-400" />
+                <span>SELECT MODEL FOR {active.name.toUpperCase()}</span>
+              </label>
+              <span className="text-[11px] font-mono text-[#86868b]">
+                {active.models.length} Model{active.models.length > 1 ? 's' : ''} Available
+              </span>
+            </div>
+
+            {/* Tactile Model Selection Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {active.models.map((m, idx) => {
+                const isSelected = draft.model === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="button"
+                    onClick={() => {
+                      const updated = { ...draft, model: m.id };
+                      setDraft(updated);
+                      onChange(updated);
+                    }}
+                    className={`model-card-btn ${isSelected ? 'active-model' : ''}`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                      <div className="circle-model-tag">
+                        {idx + 1}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-[#f5f5f7] truncate">
+                          {m.label}
+                        </div>
+                        <div className="text-[10.5px] text-[#86868b] font-mono truncate">
+                          ID: {m.id}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={`circle-radio-badge ${isSelected ? 'checked' : ''}`}>
+                      {isSelected && <div className="circle-radio-dot" />}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-[#86868b] font-mono">
-            SELECTED
-          </span>
-        </div>
 
-        <p className="text-xs text-[#86868b] leading-relaxed bg-white/[0.02] p-3 rounded-xl border border-white/[0.05]">
-          {active.instructions}
-        </p>
+          {/* Custom Base URL Endpoint if applicable */}
+          {active.baseUrlLabel && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-[#f5f5f7] block">
+                  {active.baseUrlLabel.toUpperCase()}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleBaseUrlChange(active.baseUrl || 'http://localhost:11434')}
+                  className="text-[10.5px] font-mono text-[#8ea8ff] hover:underline cursor-pointer"
+                >
+                  Reset Default
+                </button>
+              </div>
+              <div className="flex items-center bg-black/40 border border-white/[0.1] rounded-2xl px-3.5 focus-within:border-[#2997ff] shadow-inner">
+                <input
+                  type="url"
+                  value={draft.baseUrl}
+                  onChange={e => handleBaseUrlChange(e.target.value)}
+                  placeholder={active.baseUrl}
+                  autoComplete="off"
+                  className="w-full py-3 bg-transparent text-xs text-[#f5f5f7] outline-none font-mono"
+                />
+              </div>
+            </div>
+          )}
 
-        <div>
-          <label className="text-[10.5px] font-mono tracking-wider text-[#86868b] block mb-1.5">
-            DEFAULT MODEL FOR {active.name.toUpperCase()}
-          </label>
-          <ModelSelect
-            className="w-full p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-[#f5f5f7] outline-none focus:border-[#2997ff]"
-            models={active.models}
-            value={draft.model}
-            onChange={m => setDraft({ ...draft, model: m })}
-          />
-        </div>
+          {/* API Key Credentials Field */}
+          {active.requiresKey ? (
+            <div className="space-y-2.5 pt-2 border-t border-white/[0.06]">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-[#f5f5f7] flex items-center gap-1.5">
+                  <KeyRound size={13} className="text-amber-400" />
+                  <span>{active.keyLabel.toUpperCase()}</span>
+                </label>
+                <span className="text-[10.5px] font-mono text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  <ShieldCheck size={12} /> Stored in Browser Only
+                </span>
+              </div>
 
-        {active.baseUrlLabel && (
-          <div>
-            <label className="text-[10.5px] font-mono tracking-wider text-[#86868b] block mb-1.5">
-              {active.baseUrlLabel.toUpperCase()}
-            </label>
+              <div className="flex items-center bg-black/40 border border-white/[0.1] rounded-2xl px-3.5 focus-within:border-[#2997ff] shadow-inner gap-2">
+                <KeyRound size={15} className="text-[#636366] flex-none" />
+                <input
+                  type={show ? 'text' : 'password'}
+                  value={draft.apiKey}
+                  onChange={e => handleKeyChange(e.target.value)}
+                  placeholder={active.keyPlaceholder}
+                  autoComplete="off"
+                  className="w-full py-3 bg-transparent text-xs text-[#f5f5f7] outline-none font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShow(!show)}
+                  aria-label={show ? 'Hide key' : 'Show key'}
+                  className="px-2.5 py-1.5 rounded-lg text-xs text-[#86868b] hover:text-[#f5f5f7] bg-white/[0.04] hover:bg-white/[0.1] cursor-pointer transition-colors flex items-center gap-1.5 flex-none font-medium border border-white/[0.06]"
+                >
+                  {show ? <EyeOff size={13} /> : <Eye size={13} />}
+                  <span>{show ? 'Hide' : 'Show'}</span>
+                </button>
+              </div>
+
+              <p className="text-[11px] text-[#636366] leading-relaxed">
+                Keys are never sent to intermediate proxy servers. Aplx communicates directly from your client.
+              </p>
+            </div>
+          ) : (
+            <div className="p-3.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-300 flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-cyan-500/20 flex items-center justify-center flex-none">
+                <Zap size={14} className="text-cyan-400" />
+              </div>
+              <div>
+                <b className="font-semibold text-white">Zero API Keys Required:</b> This model executes completely offline in your local environment.
+              </div>
+            </div>
+          )}
+
+          {/* Persist Checkbox */}
+          <label className="flex items-start gap-3 cursor-pointer pt-2">
             <input
-              type="url"
-              value={draft.baseUrl}
-              onChange={e => handleBaseUrlChange(e.target.value)}
-              placeholder={active.baseUrl}
-              autoComplete="off"
-              className="w-full p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-[#f5f5f7] outline-none focus:border-[#2997ff] font-mono"
+              type="checkbox"
+              checked={draft.remember}
+              onChange={e => setDraft({ ...draft, remember: e.target.checked })}
+              className="mt-0.5 w-4 h-4 rounded text-blue-500 accent-blue-500 cursor-pointer"
             />
-          </div>
-        )}
+            <span className="text-xs text-[#86868b]">
+              <span className="text-[#f5f5f7] block font-medium">Persist credentials across browser sessions</span>
+              <span className="text-[11px] text-[#636366]">Saved in localStorage on this device only.</span>
+            </span>
+          </label>
 
-        {active.requiresKey && (
-          <div>
-            <label className="text-[10.5px] font-mono tracking-wider text-[#86868b] block mb-1.5">
-              {active.keyLabel.toUpperCase()}
-            </label>
-            <div className="flex items-center bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 focus-within:border-[#2997ff]">
-              <KeyRound size={14} className="text-[#636366] flex-none mr-2" />
-              <input
-                type={show ? 'text' : 'password'}
-                value={draft.apiKey}
-                onChange={e => handleKeyChange(e.target.value)}
-                placeholder={active.keyPlaceholder}
-                autoComplete="off"
-                className="w-full py-2.5 bg-transparent text-xs text-[#f5f5f7] outline-none font-mono"
-              />
+          {/* Connection Status Indicator */}
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.02] border border-white/[0.06] text-xs">
+            <div className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full ${status.includes('Connected') || status.includes('Saved') || status.includes('Detected') ? 'bg-emerald-400 shadow-sm shadow-emerald-400' : 'bg-amber-400 shadow-sm shadow-amber-400'}`} />
+              <span className="text-[#f5f5f7] font-medium">{status}</span>
+            </div>
+            <span className="text-[10.5px] text-[#86868b] font-mono">{active.route}</span>
+          </div>
+
+          {/* Action Buttons with Rounded Circles & Distinct Shapes */}
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <button
+              type="button"
+              className="px-5 py-2.5 rounded-full bg-[#f5f5f7] hover:bg-white text-black text-xs font-bold flex items-center gap-2 cursor-pointer transition-all shadow-md active:scale-95"
+              onClick={save}
+              disabled={!isProviderReady(draft)}
+            >
+              <div className="w-4 h-4 rounded-full bg-black/10 flex items-center justify-center">
+                <Check size={11} className="text-black" />
+              </div>
+              <span>Save Settings</span>
+            </button>
+
+            <button
+              type="button"
+              className="px-4 py-2.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-xs font-semibold text-[#f5f5f7] flex items-center gap-2 cursor-pointer transition-all active:scale-95 shadow-sm"
+              onClick={test}
+              disabled={!isProviderReady(draft)}
+            >
+              <div className="w-4 h-4 rounded-full bg-blue-500/20 text-[#2997ff] flex items-center justify-center">
+                <RefreshCw size={10} />
+              </div>
+              <span>Test Direct Connection</span>
+            </button>
+
+            {active.requiresKey && (
               <button
                 type="button"
-                onClick={() => setShow(!show)}
-                aria-label={show ? 'Hide key' : 'Show key'}
-                className="text-[#636366] hover:text-[#f5f5f7] p-1 cursor-pointer"
+                className="px-4 py-2.5 rounded-full text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 ml-auto cursor-pointer transition-all"
+                onClick={remove}
               >
-                {show ? <EyeOff size={14} /> : <Eye size={14} />}
+                Remove Key
               </button>
-            </div>
-            <p className="text-[11px] text-[#636366] mt-1">
-              Keys are stored locally in your browser and used only for direct calls to {active.name}.
-            </p>
+            )}
           </div>
-        )}
-
-        <label className="flex items-start gap-2.5 cursor-pointer pt-1">
-          <input
-            type="checkbox"
-            checked={draft.remember}
-            onChange={e => setDraft({ ...draft, remember: e.target.checked })}
-            className="mt-0.5 rounded text-blue-500 accent-blue-500"
-          />
-          <span className="text-xs text-[#86868b]">
-            <span className="text-[#f5f5f7] block font-medium">Persist credentials across browser sessions</span>
-            <span className="text-[11px] text-[#636366]">Saved in localStorage on this device.</span>
-          </span>
-        </label>
-      </div>
-
-      <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] text-xs">
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${status.includes('Connected') || status.includes('Saved') || status.includes('Detected') ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-          <span className="text-[#86868b]">{status}</span>
         </div>
-        <span className="text-[10px] text-[#636366] font-mono">{active.route}</span>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 pt-1">
-        <button
-          type="button"
-          className="px-4 py-2 rounded-lg bg-[#f5f5f7] hover:bg-white text-black text-xs font-semibold cursor-pointer transition-colors"
-          onClick={save}
-          disabled={!isProviderReady(draft)}
-        >
-          Save Settings
-        </button>
-        <button
-          type="button"
-          className="px-4 py-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.08] text-xs text-[#f5f5f7] cursor-pointer transition-colors"
-          onClick={test}
-          disabled={!isProviderReady(draft)}
-        >
-          Test Connection
-        </button>
-        <button
-          type="button"
-          className="px-3 py-2 text-xs text-rose-400 hover:text-rose-300 ml-auto cursor-pointer"
-          onClick={remove}
-        >
-          Remove Key
-        </button>
-      </div>
+      )}
 
       <ConnectionDetails provider={draft.provider} route={active.route} />
     </div>
@@ -435,17 +562,20 @@ export function ProviderSettings({ config, onChange, onSave }: ProviderSettingsP
 function ConnectionDetails({ provider, route }: { provider: ProviderId; route: string }) {
   const name = getProvider(provider).name;
   return (
-    <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-1.5 text-xs">
-      <div className="text-[10.5px] font-mono text-[#86868b] uppercase tracking-wider">Security & Routing Architecture</div>
-      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] pt-1">
+    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-2 text-xs">
+      <div className="text-[10.5px] font-mono text-[#86868b] uppercase tracking-wider flex items-center gap-1.5">
+        <ShieldCheck size={13} className="text-emerald-400" />
+        <span>Security & Direct Client Architecture</span>
+      </div>
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] pt-1">
         <dt className="text-[#636366]">Client Interface</dt>
         <dd className="text-[#f5f5f7] font-mono">Aplx Web Workstation</dd>
-        <dt className="text-[#636366]">Engine</dt>
+        <dt className="text-[#636366]">Active Engine</dt>
         <dd className="text-[#f5f5f7] font-mono">{name}</dd>
-        <dt className="text-[#636366]">Endpoint</dt>
+        <dt className="text-[#636366]">Direct Endpoint</dt>
         <dd className="text-[#f5f5f7] font-mono">{route}</dd>
         <dt className="text-[#636366]">Server Ingestion</dt>
-        <dd className="text-emerald-400 font-mono">0% (Pure Client-Side)</dd>
+        <dd className="text-emerald-400 font-mono font-semibold">0% (Pure Browser-Side Routing)</dd>
       </dl>
     </div>
   );

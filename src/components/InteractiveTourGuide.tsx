@@ -134,23 +134,35 @@ export function InteractiveTourGuide({
   const Icon = step.icon;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl animate-fade-in">
-      <div className="relative w-full max-w-lg rounded-2xl bg-[#0c101a]/95 border border-white/[0.1] shadow-2xl overflow-hidden text-[#f5f5f7]">
+    <div
+      className="modal-overlay"
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tour-title"
+    >
+      <div
+        className="modal-dialog"
+        style={{ maxWidth: '520px' }}
+      >
         {/* Top Bar */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.08] bg-white/[0.02]">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-medium tracking-wide text-[#86868b]">
-              APLX OVERVIEW
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', fontWeight: 600, letterSpacing: '0.06em', color: '#86868b' }}>
+              APLX INTERACTIVE GUIDE
             </span>
           </div>
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs font-mono text-[#636366]">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#708090' }}>
               {currentStep + 1} of {TOUR_STEPS.length}
             </span>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg text-[#86868b] hover:text-[#f5f5f7] hover:bg-white/[0.08] transition-colors"
+              className="modal-close-btn"
               title="Close Guide"
+              aria-label="Close Guide"
             >
               <X size={15} />
             </button>
@@ -158,51 +170,55 @@ export function InteractiveTourGuide({
         </div>
 
         {/* Progress line */}
-        <div className="w-full h-0.5 bg-white/[0.06]">
+        <div style={{ width: '100%', height: '2px', background: 'rgba(255, 255, 255, 0.08)' }}>
           <div
-            className="h-full bg-[#2997ff] transition-all duration-300"
-            style={{ width: `${((currentStep + 1) / TOUR_STEPS.length) * 100}%` }}
+            style={{
+              height: '100%',
+              background: 'linear-gradient(90deg, #2997ff, #0071e3)',
+              width: `${((currentStep + 1) / TOUR_STEPS.length) * 100}%`,
+              transition: 'width 0.3s ease',
+            }}
           />
         </div>
 
         {/* Body Content */}
-        <div className="p-6 space-y-4">
-          <div className="flex items-start gap-3.5">
-            <div className="flex-none w-10 h-10 rounded-xl bg-white/[0.06] border border-white/[0.1] flex items-center justify-center text-[#2997ff]">
+        <div style={{ padding: '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+            <div style={{ flexShrink: 0, width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(41, 151, 255, 0.15)', border: '1px solid rgba(41, 151, 255, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2997ff' }}>
               <Icon size={20} />
             </div>
 
-            <div className="flex-1 min-w-0">
-              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-mono text-[#86868b] bg-white/[0.05] mb-1">
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontFamily: 'var(--font-mono)', color: '#86868b', background: 'rgba(255, 255, 255, 0.06)', marginBottom: '4px' }}>
                 {step.badge}
               </span>
-              <h3 className="text-lg font-semibold text-[#f5f5f7] tracking-tight">
+              <h3 id="tour-title" style={{ fontSize: '17px', fontWeight: 600, color: '#f5f5f7', letterSpacing: '-0.02em', margin: 0 }}>
                 {step.title}
               </h3>
             </div>
 
             {/* Pet reaction */}
             {petId !== 'none' && (
-              <div className="hidden sm:block flex-none">
-                <PetArtwork petId={petId} mood="happy" size={44} />
+              <div style={{ flexShrink: 0 }}>
+                <PetArtwork petId={petId} mood="happy" size={42} />
               </div>
             )}
           </div>
 
-          <p className="text-xs text-[#86868b] leading-relaxed">{step.desc}</p>
+          <p style={{ fontSize: '12.5px', color: '#9db2dc', lineHeight: '1.6', margin: 0 }}>{step.desc}</p>
 
           {/* Key Tips List */}
-          <div className="space-y-2 p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 14px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
             {step.tips.map((tip, idx) => (
-              <div key={idx} className="flex items-start gap-2 text-xs text-[#e5e5ea]">
-                <CheckCircle2 size={13} className="text-[#2997ff] flex-none mt-0.5" />
+              <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: '#e5e5ea', lineHeight: '1.4' }}>
+                <CheckCircle2 size={13} style={{ color: '#2997ff', flexShrink: 0, marginTop: '2px' }} />
                 <span>{tip}</span>
               </div>
             ))}
           </div>
 
           {/* Steps Dots */}
-          <div className="flex justify-center gap-1.5 pt-1">
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', paddingTop: '4px' }}>
             {TOUR_STEPS.map((_, idx) => (
               <button
                 key={idx}
@@ -210,11 +226,16 @@ export function InteractiveTourGuide({
                   if (soundEnabled) sounds.playClick();
                   setCurrentStep(idx);
                 }}
-                className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                  currentStep === idx
-                    ? 'w-5 bg-white'
-                    : 'w-1.5 bg-white/[0.15] hover:bg-white/[0.3]'
-                }`}
+                style={{
+                  height: '6px',
+                  borderRadius: '999px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  transition: 'all 0.25s ease',
+                  width: currentStep === idx ? '22px' : '6px',
+                  background: currentStep === idx ? '#ffffff' : 'rgba(255, 255, 255, 0.18)',
+                }}
                 title={`Jump to step ${idx + 1}`}
               />
             ))}
@@ -222,32 +243,54 @@ export function InteractiveTourGuide({
         </div>
 
         {/* Footer Navigation */}
-        <div className="flex items-center justify-between px-5 py-3.5 bg-white/[0.02] border-t border-white/[0.08]">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', background: 'rgba(255, 255, 255, 0.02)', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <button
             type="button"
             onClick={handlePrev}
             disabled={isFirst}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-all ${
-              isFirst
-                ? 'opacity-30 cursor-not-allowed text-[#636366]'
-                : 'text-[#86868b] hover:text-[#f5f5f7] bg-white/[0.04] hover:bg-white/[0.08]'
-            }`}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+              background: isFirst ? 'transparent' : 'rgba(255, 255, 255, 0.05)',
+              color: isFirst ? '#48484a' : '#86868b',
+              cursor: isFirst ? 'not-allowed' : 'pointer',
+            }}
           >
             <ChevronLeft size={13} /> Back
           </button>
 
-          <div className="flex items-center gap-2">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button
               type="button"
               onClick={onClose}
-              className="text-xs text-[#86868b] hover:text-[#f5f5f7] px-2 py-1"
+              style={{
+                fontSize: '12px',
+                color: '#86868b',
+                background: 'transparent',
+                border: 'none',
+                padding: '4px 8px',
+                cursor: 'pointer',
+              }}
             >
               Skip
             </button>
             <button
               type="button"
               onClick={handleNext}
-              className="px-4 py-1.5 rounded-lg text-xs font-semibold text-black bg-[#f5f5f7] hover:bg-white border border-white/20 shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+              className="primary playful-pop"
+              style={{
+                padding: '7px 16px',
+                fontSize: '12.5px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
             >
               {isLast ? (
                 <>

@@ -16,7 +16,7 @@ const THINKING_STAGES = [
   'Synthesizing generation…',
 ];
 
-export function ThinkingIndicator({ style: _style, showTimer = true, modelName = 'Aplx', tokensSaved }: ThinkingProps) {
+export function ThinkingIndicator({ style: _style, showTimer = true, modelName = 'Aplx' }: ThinkingProps) {
   const [elapsed, setElapsed] = useState(0.1);
   const [stageIndex, setStageIndex] = useState(0);
 
@@ -38,10 +38,10 @@ export function ThinkingIndicator({ style: _style, showTimer = true, modelName =
   }, []);
 
   return (
-    <div className="my-2.5 py-3 px-4 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl max-w-lg shadow-lg">
+    <div className="my-2.5 py-3 px-4 rounded-xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl max-w-lg shadow-lg">
       <div className="flex items-center justify-between gap-3 mb-2">
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+          <div className="w-5 h-5 rounded-md bg-blue-500/20 flex items-center justify-center text-blue-400">
             <Sparkles size={12} className="animate-pulse" />
           </div>
           <span className="text-xs font-semibold tracking-wide text-[#f5f5f7]">
@@ -49,11 +49,6 @@ export function ThinkingIndicator({ style: _style, showTimer = true, modelName =
           </span>
         </div>
         <div className="flex items-center gap-2 text-[11px] font-mono text-[#86868b]">
-          {tokensSaved && tokensSaved > 0 ? (
-            <span className="text-emerald-400 font-semibold bg-emerald-950/40 border border-emerald-800/40 px-1.5 py-0.5 rounded text-[10px]">
-              ⚡ -{tokensSaved} tok
-            </span>
-          ) : null}
           {showTimer && <span>{elapsed}s</span>}
         </div>
       </div>
