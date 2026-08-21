@@ -1,5 +1,4 @@
-import React from 'react';
-import { KeyRound, ShieldAlert, X, Cpu, Sparkles, ExternalLink, ArrowRight } from 'lucide-react';
+import { KeyRound, ShieldAlert, X, Cpu, Sparkles, ArrowRight } from 'lucide-react';
 import { getProvider, PROVIDER_LIST, type ProviderId } from '../providers/registry';
 import type { ProviderConfig } from '../lib/credential';
 import type { LocalDetectionResult } from '../lib/localModelDetector';
@@ -33,56 +32,56 @@ export function ApiKeyRequiredModal({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-lg p-6 sm:p-7 rounded-2xl bg-[#090d18] border border-[#263553] shadow-2xl shadow-black/90 space-y-5 text-[#dbe5ff]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl animate-fade-in">
+      <div className="relative w-full max-w-md p-6 rounded-2xl bg-[#0c101a]/95 border border-white/[0.1] shadow-2xl space-y-4 text-[#f5f5f7]">
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-[#657697] hover:text-white hover:bg-[#141d30]"
+          className="absolute top-4 right-4 p-1 rounded-lg text-[#86868b] hover:text-[#f5f5f7] hover:bg-white/[0.08] transition-colors"
           aria-label="Close"
         >
-          <X size={18} />
+          <X size={16} />
         </button>
 
         {/* Header */}
-        <div className="flex items-start gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 flex-none shadow-inner">
-            <KeyRound size={22} />
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 flex-none">
+            <KeyRound size={18} />
           </div>
           <div>
-            <div className="text-[11px] text-amber-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
-              <ShieldAlert size={13} /> Missing Provider API Key
+            <div className="text-[10.5px] text-amber-400 font-semibold uppercase tracking-wider flex items-center gap-1">
+              <ShieldAlert size={12} /> Authentication Required
             </div>
-            <h3 className="text-lg font-bold text-white tracking-tight mt-0.5">
+            <h3 className="text-base font-semibold text-[#f5f5f7] tracking-tight mt-0.5">
               {provider.name} Requires an API Key
             </h3>
           </div>
         </div>
 
         {/* Body Description */}
-        <div className="p-3.5 rounded-xl bg-[#060912] border border-[#1b263e] text-xs text-[#9eb0d6] space-y-2 leading-relaxed">
+        <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-[#86868b] space-y-1.5 leading-relaxed">
           <p>
-            You selected a model on <b>{provider.name}</b>, but no {provider.name} API key is currently saved on this device.
+            You selected a model on <b className="text-[#f5f5f7]">{provider.name}</b>, but no credentials are saved locally in your browser.
           </p>
-          <p className="text-[#7d91b8]">
-            ⚠️ <b>Rule:</b> Aplx communicates directly from your browser to each provider. You can only use models whose specific provider API key is stored, or switch to 100% free offline models.
+          <p className="text-[#636366]">
+            Aplx connects directly from your browser to the provider without intermediate proxy servers.
           </p>
         </div>
 
         {/* Action Choices */}
-        <div className="space-y-2.5 pt-1">
+        <div className="space-y-2 pt-1">
           <button
             type="button"
             onClick={() => {
               onClose();
               onGoToSettings(providerId);
             }}
-            className="playful-pop w-full p-3 rounded-xl bg-[#8ea8ff] hover:bg-[#a5bdff] text-[#060c19] font-bold text-xs flex items-center justify-between shadow-lg shadow-[#8ea8ff]/15"
+            className="w-full p-2.5 rounded-xl bg-[#f5f5f7] hover:bg-white text-black font-semibold text-xs flex items-center justify-between transition-colors shadow-md cursor-pointer"
           >
             <span className="flex items-center gap-2">
-              <KeyRound size={15} /> Add {provider.name} API Key in Settings
+              <KeyRound size={14} /> Add {provider.name} Key in Settings
             </span>
-            <ArrowRight size={15} />
+            <ArrowRight size={14} />
           </button>
 
           {/* Local offline alternative */}
@@ -92,35 +91,34 @@ export function ApiKeyRequiredModal({
               onClose();
               onSwitchToLocal(localDetection?.recommendedModel?.id || 'llama3.3');
             }}
-            className="playful-pop w-full p-3 rounded-xl bg-[#0e172a] hover:bg-[#14213d] border border-cyan-500/30 text-cyan-200 text-xs font-semibold flex items-center justify-between"
+            className="w-full p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[#f5f5f7] text-xs font-medium flex items-center justify-between transition-colors cursor-pointer"
           >
             <span className="flex items-center gap-2">
-              <Cpu size={15} className="text-cyan-400" />
-              <span>Use Offline Model (Ollama / Local — 0 Keys Needed)</span>
+              <Cpu size={14} className="text-[#2997ff]" />
+              <span>Use Offline Model (Ollama / LM Studio)</span>
             </span>
-            <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 font-mono border border-cyan-800/40">
-              Free & Private
-            </span>
+            <span className="text-[10px] text-[#86868b] font-mono">No Key</span>
           </button>
 
-          {/* If there are already configured providers */}
+          {/* Other configured providers if available */}
           {configuredProviders.length > 0 && (
-            <div className="pt-2">
-              <div className="text-[11px] text-[#6d80a6] mb-1.5 font-medium">Or switch to a model you already configured:</div>
-              <div className="flex flex-wrap gap-1.5">
-                {configuredProviders.map(cp => (
+            <div className="pt-2 border-t border-white/[0.06]">
+              <div className="text-[10.5px] font-mono text-[#86868b] uppercase tracking-wider mb-1.5">
+                Configured Providers with Saved Keys
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {configuredProviders.map(p => (
                   <button
-                    key={cp.id}
+                    key={p.id}
                     type="button"
                     onClick={() => {
                       onClose();
-                      onGoToSettings(cp.id);
+                      onGoToSettings(p.id);
                     }}
-                    className="playful-pop text-xs px-2.5 py-1 rounded-lg bg-[#10172b] border border-[#253456] text-[#b3c7f0] hover:text-white hover:border-[#8ea8ff] flex items-center gap-1.5"
+                    className="px-2 py-1 rounded-md bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.06] text-[11px] text-[#f5f5f7] flex items-center gap-1 transition-colors"
                   >
-                    <span>{cp.logo}</span>
-                    <span>{cp.name}</span>
-                    <span className="text-emerald-400 text-[10px]">✓</span>
+                    <Sparkles size={11} className="text-[#2997ff]" />
+                    <span>{p.name}</span>
                   </button>
                 ))}
               </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, X, Search, BookmarkPlus, Terminal, Code2, PenTool, Lightbulb, ShieldAlert, Cpu, Check } from 'lucide-react';
+import { Sparkles, X, Search, BookmarkPlus } from 'lucide-react';
 
 export type PromptTemplate = {
   id: string;
@@ -118,40 +118,40 @@ export function PromptLibraryModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl bg-[#0b0e17] border border-[#2b354f] shadow-2xl text-[#dce5fb] overflow-hidden animate-modal-pop">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xl animate-fade-in">
+      <div className="w-full max-w-xl max-h-[85vh] flex flex-col rounded-2xl bg-[#0c101a]/95 border border-white/[0.1] shadow-2xl text-[#f5f5f7] overflow-hidden animate-modal-pop">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[#1f283d] bg-[#0f1422]">
-          <div className="flex items-center gap-2.5">
-            <Sparkles className="text-[#8ea8ff]" size={18} />
-            <b className="text-base text-white">Prompt Template Library</b>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
+          <div className="flex items-center gap-2">
+            <Sparkles className="text-blue-400" size={17} />
+            <h3 className="text-sm font-semibold text-[#f5f5f7]">Prompt Library</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded text-[#7c8eb2] hover:text-white hover:bg-[#1a233a]"
+            className="p-1 rounded-lg text-[#86868b] hover:text-[#f5f5f7] hover:bg-white/[0.08] transition-colors"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Search & Categories */}
-        <div className="p-4 border-b border-[#1b2336] bg-[#0d121e] space-y-3">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#060810] border border-[#252f46]">
-            <Search size={16} className="text-[#6d80a6]" />
+        <div className="p-4 border-b border-white/[0.06] bg-white/[0.01] space-y-2.5">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08]">
+            <Search size={14} className="text-[#636366]" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search prompt templates..."
-              className="bg-transparent text-xs text-white outline-none w-full"
+              placeholder="Search prompt templates…"
+              className="bg-transparent text-xs text-[#f5f5f7] outline-none w-full placeholder:text-[#636366]"
             />
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex gap-1.5 overflow-x-auto text-xs">
+            <div className="flex gap-1 overflow-x-auto text-xs">
               {[
-                { id: 'all', label: 'All Prompts' },
-                { id: 'code', label: 'Coding & Arch' },
+                { id: 'all', label: 'All' },
+                { id: 'code', label: 'Coding' },
                 { id: 'productivity', label: 'Productivity' },
                 { id: 'analysis', label: 'Analysis' },
                 { id: 'creative', label: 'Creative' },
@@ -159,10 +159,10 @@ export function PromptLibraryModal({
                 <button
                   key={c.id}
                   onClick={() => setCategory(c.id)}
-                  className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap ${
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
                     category === c.id
-                      ? 'bg-[#8ea8ff] text-[#0a1020] font-bold'
-                      : 'bg-[#141b2a] text-[#8ea8ff] hover:bg-[#1f293f]'
+                      ? 'bg-white text-black'
+                      : 'bg-white/[0.05] text-[#86868b] hover:text-[#f5f5f7] hover:bg-white/[0.09]'
                   }`}
                 >
                   {c.label}
@@ -172,42 +172,42 @@ export function PromptLibraryModal({
 
             <button
               onClick={() => setShowAddForm(!showAddForm)}
-              className="text-xs text-[#8ea8ff] hover:underline flex items-center gap-1 flex-none ml-2"
+              className="text-xs text-[#2997ff] hover:underline flex items-center gap-1 flex-none ml-2"
             >
-              <BookmarkPlus size={14} /> {showAddForm ? 'Cancel' : 'New Template'}
+              <BookmarkPlus size={13} /> {showAddForm ? 'Cancel' : 'New Template'}
             </button>
           </div>
         </div>
 
         {/* Custom Template Add Form */}
         {showAddForm && (
-          <form onSubmit={handleSaveCustom} className="p-4 bg-[#121827] border-b border-[#202a40] space-y-2">
+          <form onSubmit={handleSaveCustom} className="p-4 bg-white/[0.02] border-b border-white/[0.08] space-y-2">
             <input
               type="text"
               value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
               placeholder="Template title (e.g. SQL Query Generator)"
-              className="w-full p-2 rounded-lg bg-[#080b13] border border-[#2d3a57] text-xs text-white outline-none"
+              className="w-full px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-[#f5f5f7] outline-none"
             />
             <textarea
               rows={3}
               value={newPrompt}
               onChange={e => setNewPrompt(e.target.value)}
-              placeholder="Prompt template instructions..."
-              className="w-full p-2 rounded-lg bg-[#080b13] border border-[#2d3a57] text-xs text-white outline-none font-mono"
+              placeholder="Prompt template instructions…"
+              className="w-full p-2.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-[#f5f5f7] outline-none font-mono"
             />
             <div className="flex justify-end">
-              <button type="submit" className="primary px-3 py-1.5 text-xs rounded-lg font-bold">
-                Save Custom Template
+              <button type="submit" className="primary px-3 py-1 text-xs rounded-lg font-semibold">
+                Save Template
               </button>
             </div>
           </form>
         )}
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2.5 divide-y divide-transparent">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {filtered.length === 0 ? (
-            <div className="text-center py-8 text-xs text-[#6e80a5]">No templates match your search query.</div>
+            <div className="text-center py-8 text-xs text-[#636366]">No templates match your query.</div>
           ) : (
             filtered.map(p => (
               <div
@@ -216,18 +216,18 @@ export function PromptLibraryModal({
                   onSelectPrompt(p.prompt);
                   onClose();
                 }}
-                className="p-3.5 rounded-xl bg-[#101524] border border-[#202b44] hover:border-[#8ea8ff] hover:bg-[#151c30] transition-all cursor-pointer group"
+                className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.16] hover:bg-white/[0.06] transition-all cursor-pointer group"
               >
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-base">{p.icon}</span>
-                    <b className="text-xs text-[#eef4ff] group-hover:text-[#8ea8ff] transition-colors">{p.title}</b>
+                    <span className="text-sm">{p.icon}</span>
+                    <b className="text-xs text-[#f5f5f7] font-medium">{p.title}</b>
                   </div>
-                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[#172033] text-[#7d90b4]">
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-white/[0.05] text-[#86868b]">
                     {p.category}
                   </span>
                 </div>
-                <p className="text-[11px] text-[#8697b8] line-clamp-2 font-mono leading-relaxed">{p.prompt}</p>
+                <p className="text-[11px] text-[#86868b] line-clamp-2 font-mono leading-relaxed">{p.prompt}</p>
               </div>
             ))
           )}

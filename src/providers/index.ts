@@ -2,6 +2,7 @@ import { AnthropicProvider } from './anthropic';
 import { GeminiProvider } from './gemini';
 import { OllamaProvider } from './ollama';
 import { OpenAICompatibleProvider } from './openai-compatible';
+import { OfflineNanoProvider } from './offline-nano';
 import type { ProviderId } from './registry';
 import type { AIProvider } from './types';
 
@@ -15,6 +16,8 @@ export type ProviderSetup = {
 export function createProvider(setup: ProviderSetup): AIProvider {
   const { provider, apiKey, model, baseUrl } = setup;
   switch (provider) {
+    case 'offline':
+      return new OfflineNanoProvider(model);
     case 'gemini':
       return new GeminiProvider(apiKey, model);
     case 'openai':
@@ -77,6 +80,7 @@ export function createProvider(setup: ProviderSetup): AIProvider {
 }
 
 export function isProviderReady(setup: ProviderSetup): boolean {
+  if (setup.provider === 'offline') return true;
   if (setup.provider === 'ollama') return !!setup.baseUrl?.trim();
   return !!setup.apiKey.trim();
 }

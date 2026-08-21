@@ -1270,11 +1270,11 @@ function Landing({
         <div className="wordmark">
           <span>A</span> APLX
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={about} className="playful-pop text-xs text-[#a0b0d0] hover:text-white px-2 py-1">
+        <div className="flex items-center gap-4">
+          <button onClick={about} className="playful-pop text-xs text-[#a0b0d0] hover:text-white px-3 py-1.5">
             About
           </button>
-          <button onClick={privacy} className="playful-pop text-xs text-[#a0b0d0] hover:text-white px-2 py-1">
+          <button onClick={privacy} className="playful-pop text-xs text-[#a0b0d0] hover:text-white px-3 py-1.5">
             Privacy
           </button>
           <button onClick={launch} className="nav-launch playful-pop">
@@ -1601,11 +1601,11 @@ function Composer({
     <div className="composer-wrap">
       <div className="composer">
         {/* Helper Action Quick Ribbon */}
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-3 mb-2">
           <button
             type="button"
             onClick={onOpenHelp}
-            className="playful-pop text-[11px] font-medium px-2.5 py-1 rounded-full bg-[#121827] border border-[#2b395b] hover:border-[#8ea8ff] text-[#9db2dc] hover:text-[#edf3ff] flex items-center gap-1.5 transition-all cursor-pointer"
+            className="playful-pop text-[11px] font-medium px-3 py-1 rounded-full bg-[#121827] border border-[#2b395b] hover:border-[#8ea8ff] text-[#9db2dc] hover:text-[#edf3ff] flex items-center gap-1.5 transition-all cursor-pointer"
             title="Interactive Help & Guide"
           >
             <HelpCircle size={12} className="text-cyan-400" />
@@ -1614,7 +1614,7 @@ function Composer({
           <button
             type="button"
             onClick={onOpenPrompts}
-            className="playful-pop text-[11px] font-medium px-2.5 py-1 rounded-full bg-[#121827] border border-[#222c42] hover:border-[#8ea8ff] text-[#7d92bb] hover:text-[#edf3ff] flex items-center gap-1.5 transition-all cursor-pointer"
+            className="playful-pop text-[11px] font-medium px-3 py-1 rounded-full bg-[#121827] border border-[#222c42] hover:border-[#8ea8ff] text-[#7d92bb] hover:text-[#edf3ff] flex items-center gap-1.5 transition-all cursor-pointer"
             title="Prompt Template Library"
           >
             <Sparkles size={12} className="text-amber-400" />
@@ -1623,7 +1623,7 @@ function Composer({
           <button
             type="button"
             onClick={onOpenTokenSaver}
-            className="playful-pop text-[11px] font-medium px-2.5 py-1 rounded-full bg-[#0c1616] border border-[#1b3a2e] text-emerald-400 flex items-center gap-1.5 transition-all ml-auto cursor-pointer"
+            className="playful-pop text-[11px] font-medium px-3 py-1 rounded-full bg-[#0c1616] border border-[#1b3a2e] text-emerald-400 flex items-center gap-1.5 transition-all ml-auto cursor-pointer"
             title="Token Saver Active"
           >
             <Zap size={11} />

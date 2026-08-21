@@ -1,4 +1,5 @@
 export type ProviderId =
+  | 'offline'
   | 'gemini'
   | 'openai'
   | 'claude'
@@ -29,6 +30,23 @@ export type ProviderDef = {
 };
 
 export const PROVIDERS: Record<ProviderId, ProviderDef> = {
+  offline: {
+    id: 'offline',
+    name: 'Aplx Offline Nano (1M Thinking)',
+    logo: '⚡',
+    description: '100% in-browser 1M offline model with reasoning deliberation',
+    keyLabel: 'API key (None needed)',
+    keyPlaceholder: 'No API key needed (Runs in browser)',
+    requiresKey: false,
+    route: 'In-Browser (100% Offline · Zero Latency)',
+    models: [
+      { id: 'aplx-nano-1m-thinking', label: 'Aplx Nano 1M (Thinking & Offline)' },
+      { id: 'aplx-nano-1m-fast', label: 'Aplx Nano 1M Fast (Instant Response)' },
+    ],
+    defaultModel: 'aplx-nano-1m-thinking',
+    instructions:
+      'Runs locally inside your browser with 0 API keys and zero internet requirement. Simulates step-by-step reasoning deliberations.',
+  },
   gemini: {
     id: 'gemini',
     name: 'Google Gemini',

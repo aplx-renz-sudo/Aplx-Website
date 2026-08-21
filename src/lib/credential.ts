@@ -16,9 +16,9 @@ export type ProviderConfig = {
 };
 
 const defaultConfig = (): ProviderConfig => ({
-  provider: 'gemini',
+  provider: 'offline',
   apiKey: '',
-  model: getProvider('gemini').defaultModel,
+  model: getProvider('offline').defaultModel,
   baseUrl: getProvider('ollama').baseUrl || 'http://localhost:11434',
   remember: true,
   apiKeys: {},

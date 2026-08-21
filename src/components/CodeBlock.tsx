@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Copy, Download, Code, WrapText } from 'lucide-react';
+import { Check, Copy, Download, WrapText } from 'lucide-react';
 
 type CodeBlockProps = {
   language: string;
@@ -40,18 +40,23 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `aplx-snippet-${Date.now()}.${ext}`;
+    a.download = `aplx-${Date.now()}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="code-block-container my-3 rounded-xl overflow-hidden border border-[#2b354f] bg-[#0a0d16] shadow-lg">
-      <div className="code-block-header flex items-center justify-between px-3 py-1.5 bg-[#101524] border-b border-[#1f283d] text-xs font-mono text-[#8ea8ff]">
+    <div className="code-block-container my-3.5 rounded-xl overflow-hidden border border-white/[0.08] bg-[#070a10] shadow-xl">
+      <div className="code-block-header flex items-center justify-between px-3.5 py-2 bg-white/[0.03] border-b border-white/[0.06] text-xs font-mono text-[#86868b]">
         <div className="flex items-center gap-2">
-          <Code size={13} className="text-[#8ea8ff]" />
-          <span className="uppercase font-semibold tracking-wider text-[11px]">{cleanLang}</span>
-          <span className="text-[#596b8e] text-[10px]">({lineCount} {lineCount === 1 ? 'line' : 'lines'})</span>
+          {/* macOS window indicator dots */}
+          <div className="flex items-center gap-1.5 mr-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-white/[0.12]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-white/[0.12]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-white/[0.12]" />
+          </div>
+          <span className="uppercase font-semibold tracking-wider text-[11px] text-[#f5f5f7]">{cleanLang}</span>
+          <span className="text-[#636366] text-[10px]">({lineCount} {lineCount === 1 ? 'line' : 'lines'})</span>
         </div>
 
         <div className="flex items-center gap-1">
@@ -59,7 +64,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
             type="button"
             onClick={() => setWrap(!wrap)}
             title="Toggle word wrap"
-            className={`p-1 rounded hover:bg-[#1a233a] transition-colors ${wrap ? 'text-[#8ea8ff]' : 'text-[#6f82a6]'}`}
+            className={`p-1 rounded-md hover:bg-white/[0.08] transition-colors ${wrap ? 'text-[#2997ff]' : 'text-[#86868b]'}`}
           >
             <WrapText size={13} />
           </button>
@@ -67,7 +72,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
             type="button"
             onClick={handleDownload}
             title="Download snippet"
-            className="p-1 rounded text-[#6f82a6] hover:text-[#dce5fb] hover:bg-[#1a233a] transition-colors"
+            className="p-1 rounded-md text-[#86868b] hover:text-[#f5f5f7] hover:bg-white/[0.08] transition-colors"
           >
             <Download size={13} />
           </button>
@@ -75,7 +80,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
             type="button"
             onClick={handleCopy}
             title="Copy code"
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-[#161e33] text-[#dce6ff] hover:bg-[#202b48] border border-[#283552] transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-white/[0.06] hover:bg-white/[0.1] text-[#f5f5f7] border border-white/[0.08] transition-colors cursor-pointer"
           >
             {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
             <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -84,7 +89,7 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
       </div>
 
       <pre
-        className={`p-3.5 m-0 font-mono text-xs leading-relaxed text-[#dbe6ff] overflow-x-auto selection:bg-[#8ea8ff33] ${
+        className={`p-4 m-0 font-mono text-xs leading-relaxed text-[#e5e5ea] overflow-x-auto selection:bg-[#2997ff33] ${
           wrap ? 'whitespace-pre-wrap break-words' : 'whitespace-pre'
         }`}
       >
