@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Apple Human Interface-Inspired Design Tokens & Typography */
 :root {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "DM Sans", "Segoe UI", Roboto, sans-serif;
@@ -946,6 +950,41 @@ input:focus,
 textarea:focus {
   border-color: rgba(41, 151, 255, 0.6) !important;
   box-shadow: 0 0 0 2px rgba(41, 151, 255, 0.2) !important;
+}
+
+/* Sleek Apple-style Range Input Sliders */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #2997ff;
+  box-shadow: 0 0 10px rgba(41, 151, 255, 0.5);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 14px rgba(41, 151, 255, 0.7);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #2997ff;
+  box-shadow: 0 0 10px rgba(41, 151, 255, 0.5);
+  cursor: pointer;
 }
 
 /* Landing & Showcase Experience */
