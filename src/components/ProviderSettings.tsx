@@ -333,6 +333,39 @@ export function ProviderSettings({ config, onChange, onSave }: ProviderSettingsP
               );
             })}
           </div>
+
+          {/* Quick Action Buttons for Providers */}
+          <div className="flex flex-wrap items-center gap-2 pt-2">
+            <span className="text-[11px] text-[#86868b] font-medium">Quick Actions:</span>
+            <button
+              type="button"
+              onClick={() => pickProvider('ollama')}
+              className="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs font-medium cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
+            >
+              <Zap size={12} />
+              <span>Use Offline Ollama</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => pickProvider('gemini')}
+              className="px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-medium cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
+            >
+              <Sparkles size={12} />
+              <span>Use Google Gemini</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const clearedConfig = { ...draft, apiKey: '', apiKeys: {} };
+                setDraft(clearedConfig);
+                onChange(clearedConfig);
+                setStatus('All saved API keys cleared');
+              }}
+              className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-rose-500/15 border border-white/[0.08] hover:border-rose-500/30 text-[#86868b] hover:text-rose-300 text-xs font-medium cursor-pointer transition-all active:scale-95 ml-auto"
+            >
+              <span>Clear All Saved Keys</span>
+            </button>
+          </div>
         </div>
       )}
 

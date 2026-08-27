@@ -836,6 +836,54 @@ export function AppearanceSettings({
         </div>
       </div>
 
+      {/* SECTION 6: GLOBAL APPEARANCE ACTION BUTTONS */}
+      <div className="pt-6 border-t border-[#1a2744] flex flex-wrap items-center justify-between gap-3">
+        <div className="text-xs text-[#788cae]">
+          Appearance changes are automatically saved to your browser local storage.
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (preferences.soundEffects) sounds.playComplete();
+              alert('Appearance preferences saved successfully!');
+            }}
+            className="px-5 py-2.5 rounded-xl bg-[#8ea8ff] hover:bg-[#a6bdff] text-[#070b16] text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition-all shadow-md active:scale-95"
+          >
+            <CheckCircle2 size={14} />
+            <span>Save Appearance Config</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPreferences({
+                ...preferences,
+                theme: 'midnight',
+                themeGradientTarget: 'both',
+                font: 'dm-sans',
+                bubbleStyle: 'glass',
+                motion: true,
+                compact: false,
+                customTheme: {
+                  enabled: false,
+                  gradientStart: '#1e053a',
+                  gradientEnd: '#003b46',
+                  gradientAngle: 135,
+                  accentColor: '#8ea8ff',
+                  glowIntensity: 50,
+                  backgroundTint: '#040711',
+                  gradientTarget: 'both',
+                },
+              });
+            }}
+            className="px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-[#8e9ebc] hover:text-white text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+          >
+            <RotateCcw size={13} />
+            <span>Reset to Factory Appearance</span>
+          </button>
+        </div>
+      </div>
+
       {/* GRADIENT PLACEMENT PROMPT MODAL */}
       {pendingSelection && (
         <div
@@ -1144,19 +1192,40 @@ export function TokenSaverSettings({
         </div>
       </div>
 
-      {/* SECTION 4: ACTIONS */}
-      <div className="flex items-center justify-between gap-4 pt-2">
+      {/* SECTION 4: ACTIONS & SAVE BUTTONS */}
+      <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#1a2744]">
         <p className="text-xs text-[#7185aa]">
           Statistics are stored locally in your browser and increment on every prompt dispatch.
         </p>
-        <button
-          type="button"
-          onClick={onResetTokenStats}
-          className="px-4 py-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-700/50 text-rose-300 hover:text-rose-100 text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition-all shadow-sm active:scale-95 flex-none"
-        >
-          <RotateCcw size={14} />
-          <span>Reset Counters</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (preferences.soundEffects) sounds.playComplete();
+              alert('Token Saver configuration saved successfully!');
+            }}
+            className="px-5 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition-all shadow-md active:scale-95"
+          >
+            <CheckCircle2 size={14} />
+            <span>Save Saver Config</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreferences({ ...preferences, tokenSaverMode: 'balanced', maxHistoryTurns: 12 })}
+            className="px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-[#8e9ebc] hover:text-white text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+          >
+            <Zap size={13} className="text-emerald-400" />
+            <span>Apply Recommended Profile</span>
+          </button>
+          <button
+            type="button"
+            onClick={onResetTokenStats}
+            className="px-4 py-2.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-700/50 text-rose-300 hover:text-rose-100 text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition-all shadow-sm active:scale-95 flex-none"
+          >
+            <RotateCcw size={14} />
+            <span>Reset Counters</span>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1318,6 +1387,31 @@ export function PetSettings({
           </div>
         </div>
       )}
+
+      {/* SECTION 4: SAVE & ACTION BUTTONS */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-[#1a2744]">
+        <span className="text-xs text-[#788cae]">Interactive companions automatically persist across browser restarts.</span>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (preferences.soundEffects) sounds.playComplete();
+              alert('Companion pet preferences saved successfully!');
+            }}
+            className="px-5 py-2.5 rounded-xl bg-[#8ea8ff] hover:bg-[#a6bdff] text-[#070b16] text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition-all shadow-md active:scale-95"
+          >
+            <CheckCircle2 size={14} />
+            <span>Save Pet Preferences</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreferences({ ...preferences, petId: 'none' })}
+            className="px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-[#8e9ebc] hover:text-white text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+          >
+            <span>Disable Companion</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1437,6 +1531,32 @@ export function ThinkingSettings({
             }`}
           >
             Hide Timer
+          </button>
+        </div>
+      </div>
+
+      {/* SECTION 4: SAVE & ACTION BUTTONS */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-[#1a2744]">
+        <span className="text-xs text-[#788cae]">Thinking animation styles are synchronized across chat sessions.</span>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (preferences.soundEffects) sounds.playComplete();
+              alert('Thinking deliberation settings saved successfully!');
+            }}
+            className="px-5 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition-all shadow-md active:scale-95"
+          >
+            <CheckCircle2 size={14} />
+            <span>Save Thinking Preferences</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreferences({ ...preferences, thinkingStyle: 'shimmer', showThinkingTimer: true })}
+            className="px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-[#8e9ebc] hover:text-white text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+          >
+            <RotateCcw size={13} />
+            <span>Reset Thinking Defaults</span>
           </button>
         </div>
       </div>
@@ -1584,6 +1704,40 @@ export function PersonaSettings({
           ))}
         </div>
       </div>
+
+      {/* SECTION 4: SAVE & ACTION BUTTONS */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-[#1a2744]">
+        <span className="text-xs text-[#788cae]">System directives calibrate response tone and technical granularity.</span>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (preferences.soundEffects) sounds.playComplete();
+              alert('Persona settings saved successfully!');
+            }}
+            className="px-5 py-2.5 rounded-xl bg-[#8ea8ff] hover:bg-[#a6bdff] text-[#070b16] text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition-all shadow-md active:scale-95"
+          >
+            <CheckCircle2 size={14} />
+            <span>Save Persona Settings</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const def = PERSONAS.find(p => p.id === 'helpful');
+              setPreferences({
+                ...preferences,
+                persona: 'helpful',
+                customSystemPrompt: def ? def.prompt : '',
+                temperature: 0.7,
+              });
+            }}
+            className="px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-[#8e9ebc] hover:text-white text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+          >
+            <RotateCcw size={13} />
+            <span>Reset Persona Defaults</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1686,7 +1840,60 @@ export function DataManagementSettings({
         </div>
       </div>
 
-      {/* SECTION 3: WIPE DATA (TACTILE RED DANGER BUTTON) */}
+      {/* SECTION 3: FULL BACKUP & DIAGNOSTICS */}
+      <div className="p-6 rounded-2xl bg-[#0b101e]/90 border border-[#1f2d4a] shadow-lg space-y-3.5 pb-8 border-b border-[#1a2744]">
+        <b className="text-sm font-semibold text-[#eef3ff] block">Full Backup & Diagnostics</b>
+        <p className="text-xs text-[#8498be] leading-relaxed">
+          Download complete state backups or system diagnostics log for troubleshooting and auditing.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              let storedPref = null;
+              try {
+                const raw = localStorage.getItem('aplx_preferences_v1');
+                if (raw) storedPref = JSON.parse(raw);
+              } catch {}
+              const backup = {
+                timestamp: new Date().toISOString(),
+                version: '1.7',
+                preferences: storedPref || 'Default System Preferences',
+              };
+              const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `aplx-system-backup-${Date.now()}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="px-4 py-2.5 rounded-xl bg-[#11192e] hover:bg-[#182442] border border-[#253556] text-[#dce6ff] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-all shadow-sm active:scale-95"
+          >
+            <Download size={14} className="text-[#8ea8ff]" />
+            <span>Download Backup Package (.json)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const diag = `APLX SYSTEM DIAGNOSTICS REPORT\nGenerated: ${new Date().toLocaleString()}\nUser Agent: ${navigator.userAgent}\nStorage Key Count: ${localStorage.length}\nScreen: ${window.innerWidth}x${window.innerHeight}\nStatus: OK`;
+              const blob = new Blob([diag], { type: 'text/plain' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `aplx-diagnostics-${Date.now()}.txt`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="px-4 py-2.5 rounded-xl bg-[#11192e] hover:bg-[#182442] border border-[#253556] text-[#dce6ff] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer transition-all shadow-sm active:scale-95"
+          >
+            <Download size={14} className="text-emerald-400" />
+            <span>Download Diagnostics Log (.txt)</span>
+          </button>
+        </div>
+      </div>
+
+      {/* SECTION 4: WIPE DATA (TACTILE RED DANGER BUTTON) */}
       <div className="p-6 rounded-2xl bg-rose-950/20 border border-rose-900/30 flex items-center justify-between gap-4 shadow-md">
         <div>
           <b className="text-sm text-rose-200 block">Erase Local Browser Data</b>

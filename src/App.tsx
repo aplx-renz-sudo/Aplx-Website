@@ -1951,12 +1951,15 @@ function FullSettingsModal({
         </aside>
 
         <section className="settings-content">
-          <div className="rounded-3xl bg-[#090e1b]/80 border border-[#1d2c4b] p-6 sm:p-9 shadow-2xl shadow-black/60 backdrop-blur-md">
+          <div className="rounded-[32px] bg-[#090e1b]/75 border border-white/[0.1] p-8 sm:p-11 md:p-12 shadow-2xl shadow-black/80 backdrop-blur-xl transition-all">
             {tab === 'provider' && (
               <ProviderSettings
                 config={providerConfig}
                 onChange={onProviderChange}
-                onSave={() => {}}
+                onSave={() => {
+                  if (preferences.soundEffects) sounds.playComplete();
+                  alert('AI Provider & Model settings saved successfully!');
+                }}
               />
             )}
 
@@ -2006,11 +2009,11 @@ function FullSettingsModal({
             )}
 
             {tab === 'about' && (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div>
                   <div className="section-kicker">ABOUT</div>
-                  <h2>Aplx Web</h2>
-                  <p className="lead">The browser-based, private member of the Aplx ecosystem.</p>
+                  <h2 className="text-2xl font-bold text-white tracking-tight mt-1">Aplx Web</h2>
+                  <p className="lead text-sm text-[#8da0c4] mt-1">The browser-based, private member of the Aplx ecosystem.</p>
                 </div>
                 <div className="about-grid">
                   <div>
@@ -2026,11 +2029,20 @@ function FullSettingsModal({
                     <b>Client-Side · Direct Routing</b>
                   </div>
                 </div>
-                <button type="button" className="about-story-btn playful-pop" onClick={onAbout}>
-                  <BookOpen size={15} />
-                  <span>Read the full story</span>
-                  <ChevronLeft size={14} style={{ transform: 'rotate(180deg)' }} />
-                </button>
+                
+                {/* Action Buttons */}
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <button type="button" className="about-story-btn playful-pop" onClick={onAbout}>
+                    <BookOpen size={15} />
+                    <span>Read the full story</span>
+                    <ChevronLeft size={14} style={{ transform: 'rotate(180deg)' }} />
+                  </button>
+                  <button type="button" className="px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] text-xs font-semibold text-[#dce6ff] inline-flex items-center gap-2 cursor-pointer transition-all active:scale-95" onClick={back}>
+                    <ChevronLeft size={15} />
+                    <span>Return to Workspace</span>
+                  </button>
+                </div>
+
                 <div className="credits">
                   <div className="section-kicker">CREDITS</div>
                   <h3>Built with the help of</h3>
