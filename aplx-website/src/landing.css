@@ -1,0 +1,83 @@
+/* Apple-Inspired Refined Motion & Interactive Aesthetics */
+
+@keyframes subtle-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: subtle-fade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modal-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-modal-pop {
+  animation: modal-scale 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes message-appear {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.message {
+  animation: message-appear 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Tactile Micro-Interactions */
+.playful-btn, .primary, .secondary, .nav-launch {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s ease,
+              background 0.15s ease,
+              border-color 0.15s ease !important;
+}
+
+.playful-btn:hover, .primary:hover, .secondary:hover, .nav-launch:hover {
+  transform: translateY(-1px) !important;
+}
+
+.playful-btn:active, .primary:active, .secondary:active, .nav-launch:active {
+  transform: scale(0.98) !important;
+}
+
+.icon:hover {
+  color: #ffffff !important;
+}
+
+.new-chat {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.new-chat:hover {
+  background: rgba(255, 255, 255, 0.09) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+.history {
+  transition: all 0.15s ease !important;
+}
+.history:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+}
+
+.send {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease !important;
+}
+.send:hover:not(:disabled) {
+  transform: scale(1.04) !important;
+}
+.send:active:not(:disabled) {
+  transform: scale(0.96) !important;
+}
