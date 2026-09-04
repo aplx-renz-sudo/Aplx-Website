@@ -113,7 +113,7 @@ const defaultPreferences: Preferences = {
 
   thinkingStyle: 'orbital',
   showThinkingTimer: true,
-  thinkingDelayMs: 400,
+  thinkingDelayMs: 0,
 
   tokenSaverMode: 'balanced',
   tokenSaverTargetPercent: 22,
@@ -1160,20 +1160,20 @@ export default function App() {
               <>
                 {/* Centered Chat Messages */}
                 <section className="messages">
-                  {messages.map(m => (
-                    <MessageView
-                      key={m.id}
-                      message={m}
-                      userProfile={userProfile}
-                      regenerate={() => regenerate(m.id)}
-                      isThinking={isThinking && streaming && m.role === 'model' && !m.content}
-                      thinkingStyle={preferences.thinkingStyle}
-                      showThinkingTimer={preferences.showThinkingTimer}
-                      onSpeak={() => toggleReadAloud(m)}
-                      isSpeaking={speakingMsgId === m.id}
-                      onEditPrompt={newPrompt => send(newPrompt, m.id)}
-                    />
-                  ))}
+                  {messages
+                    .filter(m => m.role !== 'model' || m.content || (isThinking && streaming))
+                    .map(m => (
+                      <MessageView
+                        key={m.id}
+                        message={m}
+                        userProfile={userProfile}
+                        regenerate={() => regenerate(m.id)}
+                        isThinking={isThinking && streaming && m.role === 'model' && !m.content}
+                        onSpeak={() => toggleReadAloud(m)}
+                        isSpeaking={speakingMsgId === m.id}
+                        onEditPrompt={newPrompt => send(newPrompt, m.id)}
+                      />
+                    ))}
 
                   {messages.length === 1 && (
                     <PromptDeck
@@ -1580,8 +1580,6 @@ function MessageView({
   userProfile,
   regenerate,
   isThinking,
-  thinkingStyle,
-  showThinkingTimer,
   onSpeak,
   isSpeaking,
   onEditPrompt,
@@ -1590,8 +1588,6 @@ function MessageView({
   userProfile?: UserProfile | null;
   regenerate: () => void;
   isThinking?: boolean;
-  thinkingStyle: Preferences['thinkingStyle'];
-  showThinkingTimer: boolean;
   onSpeak: () => void;
   isSpeaking?: boolean;
   onEditPrompt?: (text: string) => void;
@@ -1649,13 +1645,8 @@ function MessageView({
           </div>
         </div>
 
-        {/* Thinking Indicator Animation */}
         {isThinking ? (
-          <ThinkingIndicator
-            style={thinkingStyle}
-            showTimer={showThinkingTimer}
-            modelName="Aplx"
-          />
+          <ThinkingIndicator modelName="Aplx" />
         ) : isEditing ? (
           <form onSubmit={handleSaveEdit} className="my-2 space-y-2">
             <textarea
@@ -1680,9 +1671,9 @@ function MessageView({
               </button>
             </div>
           </form>
-        ) : (
+        ) : message.content ? (
           <Mark text={message.content} />
-        )}
+        ) : null}
 
         {/* Message Action Tools */}
         {message.content && !isThinking && (
