@@ -208,7 +208,7 @@ button.secondary {
   align-items: center;
   gap: 8px;
 }
-.wordmark span, .brand-mark {
+.wordmark > span:first-child, .brand-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -222,6 +222,7 @@ button.secondary {
   font-family: var(--font-sans);
   letter-spacing: 0;
   box-shadow: 0 2px 8px rgba(41, 151, 255, 0.35);
+  flex-shrink: 0;
 }
 
 /* Refined macOS-Inspired Sidebar */

@@ -231,7 +231,7 @@ export function AboutPage({ launch, home, settings, motion }: AboutPageProps) {
             textTransform: 'uppercase',
           }}
         >
-          WEBSITE FOR APLX :- CURRENT VERSION, V1.7
+          WEBSITE FOR APLX :- CURRENT VERSION, V1.7.1
         </div>
       </footer>
     </main>

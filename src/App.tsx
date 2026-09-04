@@ -60,6 +60,7 @@ import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { OfflineAccountModal } from './components/OfflineAccountModal';
 import { InteractiveTourGuide } from './components/InteractiveTourGuide';
 import { ApiKeyRequiredModal } from './components/ApiKeyRequiredModal';
+import { InstallModal } from './components/InstallModal';
 import { detectLocalOfflineModels, getCachedLocalModels, type LocalDetectionResult } from './lib/localModelDetector';
 import {
   AppearanceSettings,
@@ -184,6 +185,7 @@ export default function App() {
   const [tokenStats, setTokenStats] = useState<TokenStats>(loadTokenStats);
 
   // Modal states
+  const [showInstallModal, setShowInstallModal] = useState(false);
   const [showPromptLib, setShowPromptLib] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
@@ -779,6 +781,7 @@ export default function App() {
         }}
       />
       <KeyboardShortcutsModal isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
+      <InstallModal isOpen={showInstallModal} onClose={() => setShowInstallModal(false)} />
 
       {/* Missing Provider API Key Modal */}
       <ApiKeyRequiredModal
@@ -988,9 +991,13 @@ export default function App() {
               <button className="playful-pop" onClick={() => setView('about')}>
                 <Orbit size={17} /> About Aplx
               </button>
-              <a className="github-side playful-pop" href="https://github.com/Korentic/Aplx" target="_blank" rel="noreferrer">
+              <button
+                type="button"
+                className="github-side playful-pop w-full text-left cursor-pointer"
+                onClick={() => setShowInstallModal(true)}
+              >
                 Install Aplx ↗
-              </a>
+              </button>
               <div className="web-status">
                 <span /> Aplx Web <small>{getProvider(providerConfig.provider).name}</small>
               </div>
@@ -1349,7 +1356,26 @@ function Landing({
         <div className="wordmark">
           <span>A</span> APLX
         </div>
-        <div className="landing-nav-links" style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
+        <div className="landing-nav-links" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <a
+            href="https://aplx.freebuff.app"
+            id="back-to-landing-btn"
+            className="landing-nav-btn playful-pop"
+            style={{
+              fontSize: '13px',
+              padding: '7px 14px',
+              borderRadius: '8px',
+              color: '#d6e4ff',
+              background: 'rgba(255, 255, 255, 0.07)',
+              border: '1px solid rgba(255, 255, 255, 0.14)',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              fontWeight: 500,
+            }}
+          >
+            Back to landing page -&gt;
+          </a>
           <button onClick={about} className="landing-nav-btn playful-pop" style={{ fontSize: '13px', padding: '7px 14px', borderRadius: '8px', color: '#a0b0d0', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             About
           </button>
@@ -1423,18 +1449,30 @@ function Landing({
             style={{
               fontSize: '12px',
               fontWeight: 700,
-              letterSpacing: '0.04em',
+              letterSpacing: '0.02em',
               color: '#fef08a',
-              textTransform: 'uppercase',
               lineHeight: 1.45,
               textShadow: '0 0 12px rgba(250, 204, 21, 0.65)',
             }}
           >
-            Still under development.. (SETTINGS IN CONSTRUCTION, WILL BE READY SOON, API FUNCTION WORKS FINE)
+            FIX 1.7.1 :- SETTINGS HAS BEEN FIXED! A few more bugs to be fixed for mobile, and its good to go.
           </span>
         </div>
 
         <div className="hero-actions">
+          <a
+            href="https://aplx.freebuff.app"
+            id="hero-back-to-landing-btn"
+            className="secondary playful-pop"
+            style={{
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            Back to landing page -&gt;
+          </a>
           <button className="primary playful-pop" onClick={launch}>
             Launch Workspace <ArrowUp size={16} />
           </button>
@@ -1796,7 +1834,7 @@ function Composer({
                 send();
               }
             }}
-            placeholder="Message Aplx… (Press Ctrl+K for templates)"
+            placeholder="Message Aplx…"
             rows={1}
             className="flex-1"
           />
@@ -1879,8 +1917,12 @@ function FullSettingsModal({
           <ChevronLeft size={18} />
           <span>Back to Workspace</span>
         </button>
-        <div className="wordmark flex items-center gap-2">
-          <span>A</span> APLX <span className="text-xs font-mono font-normal text-[#8ea8ff] bg-[#14203d] border border-[#233560] px-2 py-0.5 rounded-full">SETTINGS HUB</span>
+        <div className="wordmark flex items-center gap-2.5">
+          <span>A</span>
+          <span>APLX</span>
+          <span className="text-[11px] font-mono font-medium text-[#8ea8ff] bg-[#14203d] border border-[#233560] px-2.5 py-0.5 rounded-full tracking-wider whitespace-nowrap">
+            SETTINGS HUB
+          </span>
         </div>
         <div className="web-pill flex items-center gap-2">
           <span>SECURE & OFFLINE</span> <i />
@@ -2018,7 +2060,7 @@ function FullSettingsModal({
                 <div className="about-grid">
                   <div>
                     <small>VERSION</small>
-                    <b>V1.7 Edition</b>
+                    <b>V1.7.1 Edition</b>
                   </div>
                   <div>
                     <small>BUILT BY</small>
@@ -2076,7 +2118,7 @@ function FullSettingsModal({
                     textTransform: 'uppercase',
                   }}
                 >
-                  WEBSITE FOR APLX :- CURRENT VERSION, V1.7
+                  WEBSITE FOR APLX :- CURRENT VERSION, V1.7.1
                 </div>
               </div>
             )}
