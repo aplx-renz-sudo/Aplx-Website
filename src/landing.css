@@ -81,3 +81,74 @@
 .send:active:not(:disabled) {
   transform: scale(0.96) !important;
 }
+
+/* Floating Heart and Particle Keyframes */
+@keyframes floatHeart {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(0.8);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateY(-24px) scale(1.15) rotate(-6deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-48px) scale(1.3) rotate(8deg);
+  }
+}
+
+.animate-float-heart {
+  animation: floatHeart 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.9) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(180deg);
+  }
+}
+
+.animate-twinkle {
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+
+/* Animated Shimmer Text */
+@keyframes shimmerText {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.lively-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    #2997ff 0%,
+    #a855f7 35%,
+    #38bdf8 70%,
+    #2997ff 100%
+  );
+  background-size: 200% auto;
+  color: transparent !important;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shimmerText 5s linear infinite;
+  display: inline-block;
+}
+
+/* Smooth Interactive Console Glow */
+.interactive-console-card {
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.interactive-console-card:focus-within {
+  border-color: rgba(99, 102, 241, 0.45) !important;
+  box-shadow: 0 10px 40px -10px rgba(99, 102, 241, 0.3) !important;
+}

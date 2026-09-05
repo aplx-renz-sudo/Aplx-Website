@@ -43,6 +43,8 @@ import {
   UserCheck,
   ExternalLink,
   AlertTriangle,
+  MoreHorizontal,
+  ChevronDown,
 } from 'lucide-react';
 import { createProvider, isProviderReady } from './providers';
 import type { ChatTurn } from './providers/types';
@@ -61,6 +63,7 @@ import { OfflineAccountModal } from './components/OfflineAccountModal';
 import { InteractiveTourGuide } from './components/InteractiveTourGuide';
 import { ApiKeyRequiredModal } from './components/ApiKeyRequiredModal';
 import { InstallModal } from './components/InstallModal';
+import { InteractiveLanding } from './components/InteractiveLanding';
 import { detectLocalOfflineModels, getCachedLocalModels, type LocalDetectionResult } from './lib/localModelDetector';
 import {
   AppearanceSettings,
@@ -188,6 +191,7 @@ export default function App() {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showPromptLib, setShowPromptLib] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showSidebarTools, setShowSidebarTools] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
   const [attachmentName, setAttachmentName] = useState<string | null>(null);
@@ -807,14 +811,44 @@ export default function App() {
       />
 
       {view === 'landing' && (
-        <Landing
+        <InteractiveLanding
           launch={handleLaunchApp}
+          launchWithPrompt={(promptText, providerId) => {
+            if (promptText) {
+              setInput(promptText);
+            }
+            if (providerId) {
+              const def = getProvider(providerId);
+              persistProvider({
+                ...providerConfig,
+                provider: providerId,
+                model: def.defaultModel,
+              });
+            }
+            handleLaunchApp();
+          }}
           settings={() => goSettings('provider')}
           privacy={() => setView('privacy')}
           about={() => setView('about')}
           petId={preferences.petId}
+          onSelectPet={pet => updatePreferences({ ...preferences, petId: pet })}
           soundEnabled={preferences.soundEffects}
+          onToggleSound={() => updatePreferences({ ...preferences, soundEffects: !preferences.soundEffects })}
+          currentTheme={preferences.theme}
+          onSelectTheme={theme => updatePreferences({ ...preferences, theme })}
+          currentProvider={providerConfig.provider}
+          onSelectProvider={providerId => {
+            const def = getProvider(providerId);
+            persistProvider({
+              ...providerConfig,
+              provider: providerId,
+              model: def.defaultModel,
+            });
+          }}
           onOpenGuide={() => setShowTour(true)}
+          onOpenAccountModal={() => setShowAccountModal(true)}
+          userProfile={userProfile}
+          detectedLocalModels={localDetection}
         />
       )}
 
@@ -964,33 +998,96 @@ export default function App() {
             </div>
 
             <div className="side-bottom">
-              <button className="playful-pop" onClick={() => setShowTour(true)}>
-                <Gamepad2 size={17} className="text-cyan-400" /> Interactive Guide
-              </button>
-              <button className="playful-pop" onClick={() => setShowPromptLib(true)}>
-                <Sparkles size={17} className="text-[#8ea8ff]" /> Prompt Library
-              </button>
-              <button className="playful-pop" onClick={() => goSettings('tokensaver')}>
-                <Zap size={17} className="text-emerald-400" /> Token Saver Active
-              </button>
-              <button className="playful-pop" onClick={() => goSettings('appearance')}>
-                <Palette size={17} /> Themes & Styling
-              </button>
-              <button className="playful-pop" onClick={() => goSettings('pets')}>
-                <Cat size={17} /> Companion Pets
-              </button>
-              <button className="playful-pop" onClick={() => setShowShortcuts(true)}>
-                <Command size={17} /> Shortcuts
-              </button>
-              <button className="playful-pop" onClick={() => goSettings('provider')}>
-                <Settings size={17} /> All Settings
-              </button>
-              <button className="playful-pop" onClick={() => setView('privacy')}>
-                <ShieldCheck size={17} /> Privacy & security
-              </button>
-              <button className="playful-pop" onClick={() => setView('about')}>
-                <Orbit size={17} /> About Aplx
-              </button>
+              {!showSidebarTools ? (
+                <button
+                  type="button"
+                  id="sidebar-more-tab-btn"
+                  className="playful-pop w-full flex items-center justify-between cursor-pointer"
+                  onClick={() => {
+                    setShowSidebarTools(true);
+                    if (preferences.soundEffects) sounds.playClick();
+                  }}
+                  title="Click to open tools and settings"
+                  aria-label="More options"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    color: '#c5d4f0',
+                  }}
+                >
+                  <span className="flex items-center gap-2">
+                    <MoreHorizontal size={17} className="text-[#8ea8ff]" />
+                    <span className="font-bold tracking-widest text-xs">...</span>
+                  </span>
+                  <span className="text-[11px] text-[#7182a4]">More tools</span>
+                </button>
+              ) : (
+                <div className="flex flex-col gap-1 animate-fade-in-up">
+                  {/* Downward button to hide these buttons again */}
+                  <button
+                    type="button"
+                    id="sidebar-hide-tools-btn"
+                    className="playful-pop w-full flex items-center justify-between cursor-pointer"
+                    onClick={() => {
+                      setShowSidebarTools(false);
+                      if (preferences.soundEffects) sounds.playClick();
+                    }}
+                    title="Hide tools & options"
+                    aria-label="Hide options"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '7px 10px',
+                      borderRadius: '8px',
+                      background: 'rgba(56, 189, 248, 0.08)',
+                      border: '1px solid rgba(56, 189, 248, 0.25)',
+                      color: '#7dd3fc',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    <span className="flex items-center gap-2 text-xs font-medium">
+                      <ChevronDown size={16} className="text-cyan-400" />
+                      <span>Hide options</span>
+                    </span>
+                    <span className="text-[10px] text-[#38bdf8] font-mono uppercase">Collapse ▼</span>
+                  </button>
+
+                  <button className="playful-pop" onClick={() => setShowTour(true)}>
+                    <Gamepad2 size={17} className="text-cyan-400" /> Interactive Guide
+                  </button>
+                  <button className="playful-pop" onClick={() => setShowPromptLib(true)}>
+                    <Sparkles size={17} className="text-[#8ea8ff]" /> Prompt Library
+                  </button>
+                  <button className="playful-pop" onClick={() => goSettings('tokensaver')}>
+                    <Zap size={17} className="text-emerald-400" /> Token Saver Active
+                  </button>
+                  <button className="playful-pop" onClick={() => goSettings('appearance')}>
+                    <Palette size={17} /> Themes & Styling
+                  </button>
+                  <button className="playful-pop" onClick={() => goSettings('pets')}>
+                    <Cat size={17} /> Companion Pets
+                  </button>
+                  <button className="playful-pop" onClick={() => setShowShortcuts(true)}>
+                    <Command size={17} /> Shortcuts
+                  </button>
+                  <button className="playful-pop" onClick={() => goSettings('provider')}>
+                    <Settings size={17} /> All Settings
+                  </button>
+                  <button className="playful-pop" onClick={() => setView('privacy')}>
+                    <ShieldCheck size={17} /> Privacy & security
+                  </button>
+                  <button className="playful-pop" onClick={() => setView('about')}>
+                    <Orbit size={17} /> About Aplx
+                  </button>
+                </div>
+              )}
+
               <button
                 type="button"
                 className="github-side playful-pop w-full text-left cursor-pointer"
@@ -1317,196 +1414,6 @@ function SpaceBackground({ motion }: { motion: boolean }) {
       <i />
       <b />
     </div>
-  );
-}
-
-function Landing({
-  launch,
-  settings,
-  privacy,
-  about,
-  petId = 'fox',
-  soundEnabled,
-  onOpenGuide,
-}: {
-  launch: () => void;
-  settings: () => void;
-  privacy: () => void;
-  about: () => void;
-  petId?: string;
-  soundEnabled?: boolean;
-  onOpenGuide?: () => void;
-}) {
-  const [hearts, setHearts] = useState<{ id: number; x: number }[]>([]);
-
-  const handleMascotClick = (e: React.MouseEvent) => {
-    if (soundEnabled) sounds.playPetChirp();
-    const id = Date.now();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    setHearts(prev => [...prev.slice(-3), { id, x }]);
-    setTimeout(() => {
-      setHearts(prev => prev.filter(h => h.id !== id));
-    }, 1200);
-  };
-
-  return (
-    <main className="landing animate-fade-in-up">
-      <nav>
-        <div className="wordmark">
-          <span>A</span> APLX
-        </div>
-        <div className="landing-nav-links" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <a
-            href="https://aplx.freebuff.app"
-            id="back-to-landing-btn"
-            className="landing-nav-btn playful-pop"
-            style={{
-              fontSize: '13px',
-              padding: '7px 14px',
-              borderRadius: '8px',
-              color: '#d6e4ff',
-              background: 'rgba(255, 255, 255, 0.07)',
-              border: '1px solid rgba(255, 255, 255, 0.14)',
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              fontWeight: 500,
-            }}
-          >
-            Back to landing page -&gt;
-          </a>
-          <button onClick={about} className="landing-nav-btn playful-pop" style={{ fontSize: '13px', padding: '7px 14px', borderRadius: '8px', color: '#a0b0d0', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            About
-          </button>
-          <button onClick={privacy} className="landing-nav-btn playful-pop" style={{ fontSize: '13px', padding: '7px 14px', borderRadius: '8px', color: '#a0b0d0', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            Privacy
-          </button>
-          <button onClick={launch} className="nav-launch playful-pop">
-            Launch Aplx <ArrowUp size={14} />
-          </button>
-        </div>
-      </nav>
-      <div className="hero animate-float-hero">
-        <div className="eyebrow flex items-center justify-center gap-2">
-          <Sparkles size={14} className="text-[#8ea8ff] animate-twinkle" />
-          <span>YOUR PERSONAL DOCK FOR AI APIS</span>
-          {/* Playful Floating Pet Mascot on Hero */}
-          <span
-            onClick={handleMascotClick}
-            title="Click me for pets! ✨"
-            className="relative cursor-pointer inline-block select-none playful-pop ml-1"
-          >
-            <PetArtwork petId={petId as any} size={28} mood="happy" />
-            {hearts.map(h => (
-              <span
-                key={h.id}
-                style={{ left: `${h.x}px`, top: '-10px' }}
-                className="absolute text-rose-400 text-sm pointer-events-none animate-float-heart z-20"
-              >
-                ❤️
-              </span>
-            ))}
-          </span>
-        </div>
-        <h1>
-          The private dock for <i className="lively-shimmer-text">all your AI APIs.</i>
-        </h1>
-        <p>
-          Aplx is a universal AI dock and intuitive guide for anyone who wants to run their own API keys easily. No middleman servers — your credentials stay 100% safe in your browser.
-        </p>
-
-        {/* Under Development Glowing Yellow Area */}
-        <div
-          className="under-dev-banner"
-          style={{
-            margin: '22px 0 18px 0',
-            padding: '12px 18px',
-            borderRadius: '14px',
-            background: 'rgba(245, 158, 11, 0.13)',
-            border: '1.5px solid rgba(251, 191, 36, 0.9)',
-            boxShadow: '0 0 24px rgba(251, 191, 36, 0.4), 0 0 48px rgba(245, 158, 11, 0.22), inset 0 0 12px rgba(251, 191, 36, 0.15)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '12px',
-            maxWidth: '580px',
-            width: '100%',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-          }}
-        >
-          <AlertTriangle
-            size={20}
-            className="under-dev-icon"
-            style={{
-              color: '#fde047',
-              filter: 'drop-shadow(0 0 8px rgba(250, 204, 21, 0.85))',
-              flexShrink: 0,
-            }}
-          />
-          <span
-            className="under-dev-text"
-            style={{
-              fontSize: '12px',
-              fontWeight: 700,
-              letterSpacing: '0.02em',
-              color: '#fef08a',
-              lineHeight: 1.45,
-              textShadow: '0 0 12px rgba(250, 204, 21, 0.65)',
-            }}
-          >
-            FIX 1.7.1 :- SETTINGS HAS BEEN FIXED! A few more bugs to be fixed for mobile, and its good to go.
-          </span>
-        </div>
-
-        <div className="hero-actions">
-          <a
-            href="https://aplx.freebuff.app"
-            id="hero-back-to-landing-btn"
-            className="secondary playful-pop"
-            style={{
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            Back to landing page -&gt;
-          </a>
-          <button className="primary playful-pop" onClick={launch}>
-            Launch Workspace <ArrowUp size={16} />
-          </button>
-          {onOpenGuide && (
-            <button className="secondary playful-pop" onClick={onOpenGuide}>
-              <Gamepad2 size={16} className="text-cyan-400" /> Easy API Setup Guide
-            </button>
-          )}
-          <button className="secondary playful-pop" onClick={settings}>
-            <KeyRound size={16} /> Plug in an API Key
-          </button>
-        </div>
-        <div className="trust">
-          <span className="playful-pop">
-            <ShieldCheck size={17} /> 100% Private (Keys Stored in Browser)
-          </span>
-          <span className="playful-pop">
-            <KeyRound size={17} /> One Dock, 8+ Top AI Providers
-          </span>
-          <span className="playful-pop">
-            <Orbit size={17} /> Direct Browser → API Routing
-          </span>
-          <span className="playful-pop">
-            <Zap size={17} /> Built-in Token Saver & Guidance
-          </span>
-        </div>
-      </div>
-      <footer>
-        APLX WEB <span>•</span> A project by KORENTIC <span>•</span>
-        <a href="https://github.com/Korentic/Aplx" target="_blank" rel="noreferrer">
-          GITHUB · INSTALL APLX ↗
-        </a>
-      </footer>
-    </main>
   );
 }
 
