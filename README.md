@@ -21,5 +21,7 @@ npm run build
 ```
 
 Host it locally if you don't want to depend on online servers. AI is meant for users, not for their data.
+yada yada fancy words. simple language-
+works. and locally too lmao, no need to wait for the online thingy to load when you can install the offline one cuh-
 
 
