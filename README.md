@@ -1,28 +1,18 @@
-# Aplx Web (v1.7.1)
+# Aplx Web App.
+Official lmao
 
-> Private dock for your AI APIs — direct browser-to-provider routing with no middleman servers.
+see a lil up and compare the files to see and use for yo OS lmao
 
-**Latest update (v1.7.1):**
-- FIX 1.7.1: Settings Hub title display and styling fixed.
-- Direct redirection link back to landing page.
-- Direct installation modal options (Aplx CLI & Aplx Web).
+then clone ts fr
 
-## Running Locally
+ez use
 
-```bash
-# 1. Install dependencies
-npm install
+see yo start. type of files down here lmao
 
-# 2. Start local development server
-npm run dev
+mac- use the start.command (apple thingy)
 
-# 3. Build production bundle (outputs to /dist)
-npm run build
-```
+windows- use start.bat (big blue windows haha)
 
-Host it locally if you don't want to depend on online servers. AI is meant for users, not for their data.
-yada yada fancy words. simple language-
-works. and locally too lmao, no need to wait for the online thingy to load when you can install the offline one cuh-
-(also, go check out vercel (NOT SPONSORED) cuz they have free hosting, big W for them to host aplx :D )
+linux- use start.sh (pengiun go brr)
 
-
+boom you have aplx

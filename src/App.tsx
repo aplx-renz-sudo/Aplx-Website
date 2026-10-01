@@ -5,9 +5,12 @@ import {
   ArrowUp,
   Check,
   ChevronLeft,
+  ChevronDown,
   Copy,
+  Megaphone,
   Menu,
   MessageSquarePlus,
+  MoreHorizontal,
   Orbit,
   RotateCcw,
   Settings,
@@ -42,9 +45,16 @@ import {
   User,
   UserCheck,
   ExternalLink,
-  AlertTriangle,
-  MoreHorizontal,
-  ChevronDown,
+  Hammer,
+  Scale,
+  FileText,
+  ShieldAlert,
+  Lock,
+  CheckCircle2,
+  Activity,
+  Terminal,
+  Film,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { createProvider, isProviderReady } from './providers';
 import type { ChatTurn } from './providers/types';
@@ -57,13 +67,17 @@ import { PetArtwork } from './components/PetArtwork';
 import { ThinkingIndicator } from './components/ThinkingIndicator';
 import { TokenSaverBadge } from './components/TokenSaverBadge';
 import { CodeBlock } from './components/CodeBlock';
+import { GalaxyLogo, GalaxyLogoMini } from './components/GalaxyLogo';
+import { BuildModeView } from './components/BuildModeView';
+import { MediaStudioView } from './components/MediaStudioView';
 import { PromptLibraryModal } from './components/PromptLibraryModal';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { OfflineAccountModal } from './components/OfflineAccountModal';
 import { InteractiveTourGuide } from './components/InteractiveTourGuide';
 import { ApiKeyRequiredModal } from './components/ApiKeyRequiredModal';
 import { InstallModal } from './components/InstallModal';
-import { InteractiveLanding } from './components/InteractiveLanding';
+import { ApiLimitModal } from './components/ApiLimitModal';
+import { isApiLimitError, triggerApiLimitModal, subscribeToApiLimit } from './lib/apiLimitHandler';
 import { detectLocalOfflineModels, getCachedLocalModels, type LocalDetectionResult } from './lib/localModelDetector';
 import {
   AppearanceSettings,
@@ -73,6 +87,7 @@ import {
   PersonaSettings,
   DataManagementSettings,
 } from './components/CustomizerSettings';
+import { PrivacyNoticeView } from './components/PrivacyNoticeView';
 import { sounds } from './lib/audio';
 import { loadTokenStats, saveTokenStats, optimizeTokens } from './lib/tokenSaver';
 import {
@@ -85,6 +100,7 @@ import {
 } from './lib/conversations';
 import { startSpeechRecognition, speakText, stopSpeaking, isSpeechRecognitionSupported } from './lib/speech';
 import { loadUserProfile, saveUserProfile, isUserSetupComplete, removeUserProfile } from './lib/userProfile';
+import { checkAntiDDoS, sanitizeInputPayload } from './lib/securityGuard';
 import type { View, Message, Preferences, TokenStats, UserProfile } from './types';
 
 const preferenceKey = 'aplx:preferences:v2';
@@ -191,7 +207,7 @@ export default function App() {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showPromptLib, setShowPromptLib] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [showSidebarTools, setShowSidebarTools] = useState(false);
+  const [showMoreSidebarOptions, setShowMoreSidebarOptions] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
   const [attachmentName, setAttachmentName] = useState<string | null>(null);
@@ -207,6 +223,26 @@ export default function App() {
     providerId: 'gemini',
     providerName: 'Google Gemini',
   });
+
+  // API Rate Limit & Quota "Touch Grass" Modal State
+  const [apiLimitModal, setApiLimitModal] = useState<{
+    isOpen: boolean;
+    providerName?: string;
+    details?: string;
+  }>({
+    isOpen: false,
+  });
+
+  useEffect(() => {
+    const unsubscribe = subscribeToApiLimit(detail => {
+      setApiLimitModal({
+        isOpen: true,
+        providerName: detail.providerName || getProvider(providerConfig.provider).name,
+        details: detail.details,
+      });
+    });
+    return unsubscribe;
+  }, [providerConfig.provider]);
 
   // Auto-detect local offline models on mount
   useEffect(() => {
@@ -228,6 +264,8 @@ export default function App() {
     } catch {}
     return defaultPreferences;
   });
+
+  const [ddosAlert, setDdosAlert] = useState<string | null>(null);
 
   const stop = useRef(false);
   const messagesEnd = useRef<HTMLDivElement>(null);
@@ -374,14 +412,7 @@ export default function App() {
   const handleRemoveAccount = () => {
     removeUserProfile();
     setUserProfile(null);
-    setShowAccountModal(false);
-    // Clear conversations and reset state
-    setConversations([]);
-    saveConversations([]);
-    setActiveConvId('');
-    setActiveConversationId('');
-    setInput('');
-    setView('landing');
+    // Profile is cleanly removed; keep conversations intact so user can create a new profile immediately or anytime
     if (preferences.soundEffects) sounds.playClick();
   };
 
@@ -464,8 +495,17 @@ export default function App() {
   };
 
   const send = async (text = input, replaceId?: string) => {
-    const rawPrompt = text.trim();
+    const rawText = text.trim();
+    const { clean: rawPrompt } = sanitizeInputPayload(rawText);
     if (!rawPrompt || streaming) return;
+
+    // Anti-DDoS & Flood Protection Shield
+    const ddosStatus = checkAntiDDoS('chat_prompt');
+    if (!ddosStatus.allowed) {
+      setDdosAlert(ddosStatus.message || 'Anti-DDoS Shield: Rate limit reached. Please wait a moment.');
+      setTimeout(() => setDdosAlert(null), 5000);
+      return;
+    }
 
     if (!isUserSetupComplete()) {
       setShowAccountModal(true);
@@ -590,15 +630,23 @@ export default function App() {
       if (preferences.soundEffects) sounds.playReceive();
       setPetMood('happy');
       setTimeout(() => setPetMood('idle'), 4000);
-    } catch {
+    } catch (err: unknown) {
       setIsThinking(false);
+      const isLimit = isApiLimitError(err);
+      if (isLimit) {
+        triggerApiLimitModal({
+          providerName: getProvider(providerConfig.provider).name,
+          details: err instanceof Error ? err.message : undefined,
+        });
+      }
       updateCurrentMessages(m =>
         m.map(x =>
           x.id === assistant.id
             ? {
                 ...x,
-                content:
-                  'Unable to complete request. Please verify your API key and quota in Settings (Gear icon), or test connection.',
+                content: isLimit
+                  ? '🌱 Quota reached! "Uh oh! Seems like your API has reached its limit! Seems like you were working hard, good job! But, go touch grass now and also don\'t forget to drink water!"'
+                  : 'Unable to complete request. Please verify your API key and quota in Settings (Gear icon), or test connection.',
               }
             : x
         )
@@ -763,6 +811,16 @@ export default function App() {
         onComplete={handleAccountComplete}
         onClose={() => setShowAccountModal(false)}
         onRemoveAccount={handleRemoveAccount}
+        onGoToPrivacy={() => {
+          setShowAccountModal(false);
+          setView('privacy');
+          setTimeout(() => {
+            const el = document.getElementById('legal-notice');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 150);
+        }}
         existingProfile={userProfile}
         soundEnabled={preferences.soundEffects}
       />
@@ -810,50 +868,34 @@ export default function App() {
         localDetection={localDetection}
       />
 
+      {/* API Rate Limit & Quota "Touch Grass & Drink Water" Modal */}
+      <ApiLimitModal
+        isOpen={apiLimitModal.isOpen}
+        onClose={() => setApiLimitModal(prev => ({ ...prev, isOpen: false }))}
+        onOpenSettings={() => {
+          setApiLimitModal(prev => ({ ...prev, isOpen: false }));
+          goSettings('provider');
+        }}
+        providerName={apiLimitModal.providerName}
+        details={apiLimitModal.details}
+      />
+
       {view === 'landing' && (
-        <InteractiveLanding
-          launch={handleLaunchApp}
-          launchWithPrompt={(promptText, providerId) => {
-            if (promptText) {
-              setInput(promptText);
-            }
-            if (providerId) {
-              const def = getProvider(providerId);
-              persistProvider({
-                ...providerConfig,
-                provider: providerId,
-                model: def.defaultModel,
-              });
-            }
-            handleLaunchApp();
-          }}
-          settings={() => goSettings('provider')}
-          privacy={() => setView('privacy')}
-          about={() => setView('about')}
-          petId={preferences.petId}
-          onSelectPet={pet => updatePreferences({ ...preferences, petId: pet })}
-          soundEnabled={preferences.soundEffects}
-          onToggleSound={() => updatePreferences({ ...preferences, soundEffects: !preferences.soundEffects })}
-          currentTheme={preferences.theme}
-          onSelectTheme={theme => updatePreferences({ ...preferences, theme })}
-          currentProvider={providerConfig.provider}
-          onSelectProvider={providerId => {
-            const def = getProvider(providerId);
-            persistProvider({
-              ...providerConfig,
-              provider: providerId,
-              model: def.defaultModel,
-            });
-          }}
-          onOpenGuide={() => setShowTour(true)}
-          onOpenAccountModal={() => setShowAccountModal(true)}
-          userProfile={userProfile}
-          detectedLocalModels={localDetection}
-        />
+        <div key="view-landing" className="workspace-container animate-workspace-slide-in">
+          <Landing
+            launch={handleLaunchApp}
+            settings={() => goSettings('provider')}
+            privacy={() => setView('privacy')}
+            about={() => setView('about')}
+            petId={preferences.petId}
+            soundEnabled={preferences.soundEffects}
+            onOpenGuide={() => setShowTour(true)}
+          />
+        </div>
       )}
 
       {view === 'chat' && (
-        <>
+        <div key="view-chat" className="workspace-container animate-workspace-slide-in">
           <aside className={'sidebar ' + (sidebar ? 'open' : '')}>
             <div className="brand flex items-center justify-between">
               <button
@@ -998,103 +1040,96 @@ export default function App() {
             </div>
 
             <div className="side-bottom">
-              {!showSidebarTools ? (
+              {!showMoreSidebarOptions ? (
                 <button
                   type="button"
-                  id="sidebar-more-tab-btn"
-                  className="playful-pop w-full flex items-center justify-between cursor-pointer"
-                  onClick={() => {
-                    setShowSidebarTools(true);
-                    if (preferences.soundEffects) sounds.playClick();
-                  }}
-                  title="Click to open tools and settings"
-                  aria-label="More options"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    color: '#c5d4f0',
-                  }}
+                  className="sidebar-options-toggle-btn flex items-center justify-between w-full cursor-pointer"
+                  onClick={() => setShowMoreSidebarOptions(true)}
+                  title="Open options (...)"
                 >
-                  <span className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <MoreHorizontal size={17} className="text-[#8ea8ff]" />
-                    <span className="font-bold tracking-widest text-xs">...</span>
-                  </span>
-                  <span className="text-[11px] text-[#7182a4]">More tools</span>
+                    <span>...</span>
+                  </div>
+                  <span className="text-[11px] text-[#86868b] font-medium tracking-wide">Options</span>
                 </button>
               ) : (
-                <div className="flex flex-col gap-1 animate-fade-in-up">
+                <div className="flex flex-col gap-1 w-full animate-fade-in">
                   {/* Downward button to hide these buttons again */}
                   <button
                     type="button"
-                    id="sidebar-hide-tools-btn"
-                    className="playful-pop w-full flex items-center justify-between cursor-pointer"
-                    onClick={() => {
-                      setShowSidebarTools(false);
-                      if (preferences.soundEffects) sounds.playClick();
-                    }}
-                    title="Hide tools & options"
-                    aria-label="Hide options"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '7px 10px',
-                      borderRadius: '8px',
-                      background: 'rgba(56, 189, 248, 0.08)',
-                      border: '1px solid rgba(56, 189, 248, 0.25)',
-                      color: '#7dd3fc',
-                      marginBottom: '4px',
-                    }}
+                    className="sidebar-options-toggle-btn flex items-center justify-between w-full cursor-pointer bg-white/[0.06] hover:bg-white/[0.1] text-[#a5b4fc] border border-white/[0.08]"
+                    onClick={() => setShowMoreSidebarOptions(false)}
+                    title="Hide options"
                   >
-                    <span className="flex items-center gap-2 text-xs font-medium">
-                      <ChevronDown size={16} className="text-cyan-400" />
+                    <div className="flex items-center gap-2">
+                      <ChevronDown size={17} className="text-[#8ea8ff]" />
                       <span>Hide options</span>
-                    </span>
-                    <span className="text-[10px] text-[#38bdf8] font-mono uppercase">Collapse ▼</span>
+                    </div>
+                    <ChevronDown size={15} className="text-[#8ea8ff]" />
                   </button>
 
-                  <button className="playful-pop" onClick={() => setShowTour(true)}>
-                    <Gamepad2 size={17} className="text-cyan-400" /> Interactive Guide
-                  </button>
-                  <button className="playful-pop" onClick={() => setShowPromptLib(true)}>
-                    <Sparkles size={17} className="text-[#8ea8ff]" /> Prompt Library
-                  </button>
-                  <button className="playful-pop" onClick={() => goSettings('tokensaver')}>
-                    <Zap size={17} className="text-emerald-400" /> Token Saver Active
-                  </button>
-                  <button className="playful-pop" onClick={() => goSettings('appearance')}>
-                    <Palette size={17} /> Themes & Styling
-                  </button>
-                  <button className="playful-pop" onClick={() => goSettings('pets')}>
-                    <Cat size={17} /> Companion Pets
-                  </button>
-                  <button className="playful-pop" onClick={() => setShowShortcuts(true)}>
-                    <Command size={17} /> Shortcuts
-                  </button>
-                  <button className="playful-pop" onClick={() => goSettings('provider')}>
-                    <Settings size={17} /> All Settings
-                  </button>
-                  <button className="playful-pop" onClick={() => setView('privacy')}>
-                    <ShieldCheck size={17} /> Privacy & security
-                  </button>
-                  <button className="playful-pop" onClick={() => setView('about')}>
-                    <Orbit size={17} /> About Aplx
-                  </button>
+                  <div className="flex flex-col gap-1 max-h-[46vh] overflow-y-auto pr-0.5">
+                    <button className="playful-pop" onClick={() => setView('media')}>
+                      <Film size={17} className="text-cyan-400" /> Media Studio (Images & Video)
+                    </button>
+                    <button className="playful-pop" onClick={() => setView('build')}>
+                      <Hammer size={17} className="text-amber-400" /> Build Mode
+                    </button>
+                    <button className="playful-pop" onClick={() => setShowTour(true)}>
+                      <Gamepad2 size={17} className="text-cyan-400" /> Interactive Guide
+                    </button>
+                    <button className="playful-pop" onClick={() => setShowPromptLib(true)}>
+                      <Sparkles size={17} className="text-[#8ea8ff]" /> Prompt Library
+                    </button>
+                    <button className="playful-pop" onClick={() => goSettings('tokensaver')}>
+                      <Zap size={17} className="text-emerald-400" /> Token Saver Active
+                    </button>
+                    <button className="playful-pop" onClick={() => goSettings('appearance')}>
+                      <Palette size={17} /> Themes & Styling
+                    </button>
+                    <button className="playful-pop" onClick={() => goSettings('pets')}>
+                      <Cat size={17} /> Companion Pets
+                    </button>
+                    <button className="playful-pop" onClick={() => setShowShortcuts(true)}>
+                      <Command size={17} /> Shortcuts
+                    </button>
+                    <button className="playful-pop" onClick={() => goSettings('provider')}>
+                      <Settings size={17} /> All Settings
+                    </button>
+                    <button className="playful-pop" onClick={() => setView('privacy')}>
+                      <ShieldCheck size={17} /> Privacy & security
+                    </button>
+                    <button className="playful-pop" onClick={() => setView('about')}>
+                      <Orbit size={17} /> About Aplx
+                    </button>
+                    <button
+                      type="button"
+                      className="playful-pop flex items-center justify-center gap-1.5 w-full py-1 text-xs text-[#86868b] hover:text-white cursor-pointer"
+                      onClick={() => setShowMoreSidebarOptions(false)}
+                      title="Hide options"
+                    >
+                      <ChevronDown size={14} />
+                      <span>Hide options</span>
+                    </button>
+                  </div>
                 </div>
               )}
 
+              {/* Install Aplx button placed directly below Options */}
               <button
                 type="button"
-                className="github-side playful-pop w-full text-left cursor-pointer"
+                id="install-aplx-sidebar-btn"
+                className="github-side playful-pop w-full text-left cursor-pointer flex items-center justify-between"
                 onClick={() => setShowInstallModal(true)}
+                title="Install Aplx CLI or Website"
               >
-                Install Aplx ↗
+                <div className="flex items-center gap-2">
+                  <Download size={14} className="text-[#8ea8ff]" />
+                  <span>Install Aplx ↗</span>
+                </div>
               </button>
+
               <div className="web-status">
                 <span /> Aplx Web <small>{getProvider(providerConfig.provider).name}</small>
               </div>
@@ -1324,6 +1359,24 @@ export default function App() {
                     accept=".txt,.md,.js,.ts,.tsx,.py,.json,.csv,.sql,.html,.css"
                   />
 
+                  {/* Anti-DDoS Security Banner */}
+                  {ddosAlert && (
+                    <div className="mb-2.5 p-2.5 px-4 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-between gap-2 shadow-lg shadow-amber-950/50 animate-bounce">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck size={16} className="text-amber-400 flex-none" />
+                        <span className="font-medium">{ddosAlert}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setDdosAlert(null)}
+                        className="text-amber-400 hover:text-white cursor-pointer"
+                        title="Dismiss"
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+                  )}
+
                   <Composer
                     value={input}
                     change={handleInputChange}
@@ -1347,42 +1400,69 @@ export default function App() {
               </>
             )}
           </main>
-        </>
+        </div>
       )}
 
       {view === 'settings' && (
-        <FullSettingsModal
-          tab={settingsTab}
-          setTab={setSettingsTab}
-          providerConfig={providerConfig}
-          onProviderChange={persistProvider}
-          preferences={preferences}
-          setPreferences={updatePreferences}
-          tokenStats={tokenStats}
-          onResetTokenStats={() => setTokenStats(loadTokenStats())}
-          onExportChat={exportChat}
-          onImportChat={importChat}
-          onClearAllData={clearAllData}
-          back={() => setView('chat')}
-          onAbout={() => setView('about')}
-        />
+        <div key="view-settings" className="workspace-container animate-workspace-slide-in">
+          <FullSettingsModal
+            tab={settingsTab}
+            setTab={setSettingsTab}
+            providerConfig={providerConfig}
+            onProviderChange={persistProvider}
+            preferences={preferences}
+            setPreferences={updatePreferences}
+            tokenStats={tokenStats}
+            onResetTokenStats={() => setTokenStats(loadTokenStats())}
+            onExportChat={exportChat}
+            onImportChat={importChat}
+            onClearAllData={clearAllData}
+            back={() => setView('chat')}
+            onAbout={() => setView('about')}
+            onPrivacy={() => setView('privacy')}
+          />
+        </div>
       )}
 
       {view === 'privacy' && (
-        <Privacy
-          back={() => setView('landing')}
-          settings={() => goSettings('provider')}
-          about={() => setView('about')}
-        />
+        <div key="view-privacy" className="workspace-container animate-workspace-slide-in">
+          <Privacy
+            back={() => setView('landing')}
+            settings={() => goSettings('provider')}
+            about={() => setView('about')}
+          />
+        </div>
       )}
 
       {view === 'about' && (
-        <AboutPage
-          launch={handleLaunchApp}
-          home={() => setView('landing')}
-          settings={() => goSettings('provider')}
-          motion={preferences.motion}
-        />
+        <div key="view-about" className="workspace-container animate-workspace-slide-in">
+          <AboutPage
+            launch={handleLaunchApp}
+            home={() => setView('landing')}
+            settings={() => goSettings('provider')}
+            motion={preferences.motion}
+          />
+        </div>
+      )}
+
+      {view === 'build' && (
+        <div key="view-build" className="workspace-container animate-workspace-slide-in">
+          <BuildModeView
+            providerConfig={providerConfig}
+            onLeave={() => setView('chat')}
+            onOpenSettings={() => goSettings('provider')}
+          />
+        </div>
+      )}
+
+      {view === 'media' && (
+        <div key="view-media" className="workspace-container animate-workspace-slide-in">
+          <MediaStudioView
+            providerConfig={providerConfig}
+            onLeave={() => setView('chat')}
+            onOpenSettings={() => goSettings('provider')}
+          />
+        </div>
       )}
     </div>
   );
@@ -1414,6 +1494,179 @@ function SpaceBackground({ motion }: { motion: boolean }) {
       <i />
       <b />
     </div>
+  );
+}
+
+function Landing({
+  launch,
+  settings,
+  privacy,
+  about,
+  petId = 'fox',
+  soundEnabled,
+  onOpenGuide,
+}: {
+  launch: () => void;
+  settings: () => void;
+  privacy: () => void;
+  about: () => void;
+  petId?: string;
+  soundEnabled?: boolean;
+  onOpenGuide?: () => void;
+}) {
+  const [hearts, setHearts] = useState<{ id: number; x: number }[]>([]);
+
+  const handleMascotClick = (e: React.MouseEvent) => {
+    if (soundEnabled) sounds.playPetChirp();
+    const id = Date.now();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    setHearts(prev => [...prev.slice(-3), { id, x }]);
+    setTimeout(() => {
+      setHearts(prev => prev.filter(h => h.id !== id));
+    }, 1200);
+  };
+
+  return (
+    <main className="landing animate-fade-in-up">
+      <nav>
+        <div className="wordmark">
+          <GalaxyLogoMini size={26} /> APLX
+        </div>
+        <div className="landing-nav-links" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <a
+            href="https://aplx.freebuff.app"
+            id="back-to-landing-btn"
+            className="landing-nav-btn playful-pop"
+            style={{
+              fontSize: '13px',
+              padding: '7px 14px',
+              borderRadius: '8px',
+              color: '#d6e4ff',
+              background: 'rgba(255, 255, 255, 0.07)',
+              border: '1px solid rgba(255, 255, 255, 0.14)',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              fontWeight: 500,
+            }}
+          >
+            Back to landing page -&gt;
+          </a>
+          <button onClick={about} className="landing-nav-btn playful-pop" style={{ fontSize: '13px', padding: '7px 14px', borderRadius: '8px', color: '#a0b0d0', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            About
+          </button>
+          <button onClick={privacy} className="landing-nav-btn playful-pop" style={{ fontSize: '13px', padding: '7px 14px', borderRadius: '8px', color: '#a0b0d0', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            Privacy
+          </button>
+          <button onClick={launch} className="nav-launch playful-pop">
+            Launch Aplx <ArrowUp size={14} />
+          </button>
+        </div>
+      </nav>
+      {/* Updates sit at the top of the lobby, like a game's welcome screen. */}
+      <div className="announce-board" role="status" aria-label="V2 announcements">
+        <div className="announce-board-header">
+          <Megaphone size={14} />
+          <span>What's new in Aplx</span>
+          <span className="announce-board-dots">•••</span>
+        </div>
+        <ul className="announce-board-list">
+          <li className="announce-board-item">
+            <CheckCircle2 size={14} className="announce-board-check" />
+            <span className="announce-board-text"><span className="announce-board-tag">NEW</span>Brand new <b>V2</b>, PC exclusive, works on every OS!</span>
+          </li>
+          <li className="announce-board-item">
+            <CheckCircle2 size={14} className="announce-board-check" />
+            <span className="announce-board-text"><span className="announce-board-tag">NEW</span>Features added that were previously limited!</span>
+          </li>
+          <li className="announce-board-item">
+            <CheckCircle2 size={14} className="announce-board-check" />
+            <span className="announce-board-text"><span className="announce-board-tag">NEW</span>Run locally using .bat, .sh, or .command for your OS.</span>
+          </li>
+        </ul>
+      </div>
+      <div className="hero animate-float-hero">
+        {/* Interactive Galaxy Logo — dotted "A" core with two orbiting dots */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '28px' }}>
+          <GalaxyLogo size={225} />
+        </div>
+        <div className="eyebrow flex items-center justify-center gap-2">
+          <Sparkles size={14} className="text-[#8ea8ff] animate-twinkle" />
+          <span>YOUR PERSONAL DOCK FOR AI APIS</span>
+          {/* Playful Floating Pet Mascot on Hero */}
+          <span
+            onClick={handleMascotClick}
+            title="Click me for pets! ✨"
+            className="relative cursor-pointer inline-block select-none playful-pop ml-1"
+          >
+            <PetArtwork petId={petId as any} size={28} mood="happy" />
+            {hearts.map(h => (
+              <span
+                key={h.id}
+                style={{ left: `${h.x}px`, top: '-10px' }}
+                className="absolute text-rose-400 text-sm pointer-events-none animate-float-heart z-20"
+              >
+                ❤️
+              </span>
+            ))}
+          </span>
+        </div>
+        <h1>
+          The private dock for <i className="lively-shimmer-text">all your AI APIs.</i>
+        </h1>
+        <p>
+          Aplx is a universal AI dock and intuitive guide for anyone who wants to run their own API keys easily. No middleman servers — your credentials stay 100% safe in your browser.
+        </p>
+
+        <div className="hero-actions">
+          <a
+            href="https://aplx.freebuff.app"
+            id="hero-back-to-landing-btn"
+            className="secondary playful-pop"
+            style={{
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            Back to landing page -&gt;
+          </a>
+          <button className="primary playful-pop" onClick={launch}>
+            Launch Workspace <ArrowUp size={16} />
+          </button>
+          {onOpenGuide && (
+            <button className="secondary playful-pop" onClick={onOpenGuide}>
+              <Gamepad2 size={16} className="text-cyan-400" /> Easy API Setup Guide
+            </button>
+          )}
+          <button className="secondary playful-pop" onClick={settings}>
+            <KeyRound size={16} /> Plug in an API Key
+          </button>
+        </div>
+        <div className="trust">
+          <span className="playful-pop">
+            <ShieldCheck size={17} /> 100% Private (Keys Stored in Browser)
+          </span>
+          <span className="playful-pop">
+            <KeyRound size={17} /> One Dock, 8+ Top AI Providers
+          </span>
+          <span className="playful-pop">
+            <Orbit size={17} /> Direct Browser → API Routing
+          </span>
+          <span className="playful-pop">
+            <Zap size={17} /> Built-in Token Saver & Guidance
+          </span>
+        </div>
+      </div>
+      <footer>
+        APLX WEB <span>•</span> A project by R3NZ <span>•</span>
+        <a href="https://github.com/R3nz/Aplx" target="_blank" rel="noreferrer">
+          GITHUB · INSTALL APLX ↗
+        </a>
+      </footer>
+    </main>
   );
 }
 
@@ -1767,6 +2020,7 @@ function FullSettingsModal({
   onClearAllData,
   back,
   onAbout,
+  onPrivacy,
 }: {
   tab: 'provider' | 'tokensaver' | 'appearance' | 'pets' | 'thinking' | 'persona' | 'privacy' | 'about';
   setTab: (x: typeof tab) => void;
@@ -1781,6 +2035,7 @@ function FullSettingsModal({
   onClearAllData: () => void;
   back: () => void;
   onAbout: () => void;
+  onPrivacy?: () => void;
 }) {
   const SECTIONS = [
     {
@@ -1803,7 +2058,7 @@ function FullSettingsModal({
       title: 'Security & Platform',
       items: [
         { id: 'privacy' as const, label: 'Data & Privacy Hub', icon: ShieldCheck, badge: '100% Client', color: 'text-emerald-400' },
-        { id: 'about' as const, label: 'About & Ecosystem', icon: Orbit, badge: 'v1.7', color: 'text-blue-400' },
+        { id: 'about' as const, label: 'About & Ecosystem', icon: Orbit, badge: 'V2', color: 'text-blue-400' },
       ],
     },
   ];
@@ -1816,7 +2071,7 @@ function FullSettingsModal({
           <span>Back to Workspace</span>
         </button>
         <div className="wordmark flex items-center gap-2.5">
-          <span>A</span>
+          <GalaxyLogoMini size={22} />
           <span>APLX</span>
           <span className="text-[11px] font-mono font-medium text-[#8ea8ff] bg-[#14203d] border border-[#233560] px-2.5 py-0.5 rounded-full tracking-wider whitespace-nowrap">
             SETTINGS HUB
@@ -1945,6 +2200,7 @@ function FullSettingsModal({
                 onExportChat={onExportChat}
                 onImportChat={onImportChat}
                 onClearAllData={onClearAllData}
+                onViewPrivacy={onPrivacy}
               />
             )}
 
@@ -1958,11 +2214,11 @@ function FullSettingsModal({
                 <div className="about-grid">
                   <div>
                     <small>VERSION</small>
-                    <b>V1.7.1 Edition</b>
+                    <b>V2 Edition</b>
                   </div>
                   <div>
                     <small>BUILT BY</small>
-                    <b>Korentic</b>
+                    <b>R3nz</b>
                   </div>
                   <div>
                     <small>MODE</small>
@@ -1989,7 +2245,7 @@ function FullSettingsModal({
                   <p>
                     R3nz (developer) , Github copilot, Claude Sonnet and Haiku and Opus models, CodeX (GPT-5.6), Kimi K3, GPT-4, minimax-m3, Grok, Le chat Mistral, Gemini, and many more AIs!
                   </p>
-                  <a href="https://github.com/Korentic/Aplx" target="_blank" rel="noreferrer" className="about-github-btn playful-pop">
+                  <a href="https://github.com/R3nz/Aplx" target="_blank" rel="noreferrer" className="about-github-btn playful-pop">
                     <ExternalLink size={15} />
                     <span>Explore & install Aplx on GitHub</span>
                     <span className="text-xs text-[#8ea8ff]">↗</span>
@@ -2016,7 +2272,7 @@ function FullSettingsModal({
                     textTransform: 'uppercase',
                   }}
                 >
-                  WEBSITE FOR APLX :- CURRENT VERSION, V1.7.1
+                  WEBSITE FOR APLX :- CURRENT VERSION, V2
                 </div>
               </div>
             )}
@@ -2028,48 +2284,5 @@ function FullSettingsModal({
 }
 
 function Privacy({ back, settings, about }: { back: () => void; settings: () => void; about: () => void }) {
-  return (
-    <main className="privacy-page animate-fade-in-up">
-      <nav>
-        <div className="wordmark">
-          <span>A</span> APLX
-        </div>
-        <div className="about-nav-actions">
-          <button onClick={about} className="playful-pop">About</button>
-          <button className="nav-launch playful-pop" onClick={back}>
-            Home
-          </button>
-        </div>
-      </nav>
-      <div className="privacy-hero animate-float-hero">
-        <div className="eyebrow flex items-center gap-2">
-          <ShieldCheck size={14} className="text-[#8ea8ff] animate-twinkle" /> <span>PRIVACY & SECURITY</span>
-        </div>
-        <h1>
-          Your key is <i className="lively-shimmer-text">yours.</i>
-        </h1>
-        <p>Aplx is deliberately built so your provider credentials never pass through an Aplx server.</p>
-        <div className="details">
-          <h3>Connection details</h3>
-          <dl>
-            <dt>Assistant</dt>
-            <dd>Aplx (your interface)</dd>
-            <dt>Model provider</dt>
-            <dd>Your chosen provider</dd>
-            <dt>Credential</dt>
-            <dd>User-provided (Local)</dd>
-            <dt>Request route</dt>
-            <dd>Browser → your provider</dd>
-            <dt>Aplx server access</dt>
-            <dd>None</dd>
-            <dt>API key stored by Aplx server</dt>
-            <dd>No</dd>
-          </dl>
-        </div>
-        <button className="primary playful-pop" onClick={settings}>
-          Connect a provider <ArrowUp size={16} />
-        </button>
-      </div>
-    </main>
-  );
+  return <PrivacyNoticeView back={back} settings={settings} about={about} />;
 }

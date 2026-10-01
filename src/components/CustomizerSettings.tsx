@@ -28,6 +28,11 @@ import {
   X,
   Trash2,
   WandSparkles,
+  Scale,
+  FileText,
+  AlertTriangle,
+  ShieldAlert,
+  ChevronRight,
 } from 'lucide-react';
 import type {
   Preferences,
@@ -1746,10 +1751,12 @@ export function DataManagementSettings({
   onExportChat,
   onImportChat,
   onClearAllData,
+  onViewPrivacy,
 }: {
   onExportChat: (format: 'json' | 'markdown' | 'text') => void;
   onImportChat: (jsonStr: string) => void;
   onClearAllData: () => void;
+  onViewPrivacy?: () => void;
 }) {
   const [importJson, setImportJson] = useState('');
   const [importSuccess, setImportSuccess] = useState(false);
@@ -1907,6 +1914,92 @@ export function DataManagementSettings({
           <Trash2 size={14} />
           <span>Clear All Data</span>
         </button>
+      </div>
+
+      {/* SECTION 5: LEGAL NOTICE & LIMITATION OF LIABILITY SUMMARY */}
+      <div className="p-6 rounded-2xl bg-[#090d19] border border-amber-500/30 shadow-xl space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 flex-none shadow-md shadow-amber-950/40">
+              <Scale size={18} />
+            </div>
+            <div>
+              <span className="text-[10.5px] font-mono font-bold tracking-wider text-amber-400 uppercase flex items-center gap-1.5">
+                <FileText size={12} /> LEGAL NOTICE & LIMITATION OF LIABILITY
+              </span>
+              <h3 className="text-sm font-bold text-white tracking-tight mt-0.5">
+                Allocation of Responsibilities & Legal Terms Summary
+              </h3>
+            </div>
+          </div>
+          {onViewPrivacy && (
+            <button
+              type="button"
+              onClick={onViewPrivacy}
+              className="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <span>Read Full Legal Notice</span>
+              <ChevronRight size={13} />
+            </button>
+          )}
+        </div>
+
+        <div className="text-xs text-[#9eb0d2] leading-relaxed space-y-3 font-sans pt-1">
+          <div className="p-4 rounded-xl bg-black/50 border border-white/[0.08] space-y-2">
+            <div className="font-semibold text-[#f0f4ff] flex items-center gap-2 text-xs">
+              <AlertTriangle size={14} className="text-amber-400 flex-none" />
+              <span>1. Limitation of Liability & Scope of Responsibility</span>
+            </div>
+            <p className="text-[11.5px] text-[#8fa1c4] leading-relaxed">
+              To the maximum extent permitted by applicable law, the developer(s), authors, and contributors of <strong>Aplx</strong> (<span className="text-[#c0d2f6]">"the Developer"</span>) are not liable for losses, damages, or claims arising from user configurations, choice of AI providers, submitted prompts, generated outputs, or actions taken in reliance on AI results. Aplx is an open-source client utility; users retain primary control and responsibility over their credentials, operational prompts, and downstream deployments.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-1.5">
+              <span className="text-[10.5px] font-mono font-bold text-emerald-300 flex items-center gap-1">
+                2. USER DISCRETION & DIRECT ROUTING
+              </span>
+              <p className="text-[11px] text-[#8294b6] leading-normal">
+                Prompts, configurations, API keys, and file attachments are initiated directly by the user from their browser to third-party AI provider endpoints. The Developer maintains no intermediary server or editorial oversight.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-1.5">
+              <span className="text-[10.5px] font-mono font-bold text-amber-300 flex items-center gap-1">
+                3. "AS-IS" & "AS-AVAILABLE"
+              </span>
+              <p className="text-[11px] text-[#8294b6] leading-normal">
+                Aplx is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind. Nothing in this notice excludes or limits statutory consumer rights that cannot be lawfully waived under applicable law.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-1.5">
+              <span className="text-[10.5px] font-mono font-bold text-cyan-300 flex items-center gap-1">
+                4. THIRD-PARTY PROVIDER TERMS
+              </span>
+              <p className="text-[11px] text-[#8294b6] leading-normal">
+                Third-party AI providers (e.g., Google, Anthropic, OpenAI) process data under their own independent terms and privacy policies. The user is responsible for reviewing and complying with provider terms and billing.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-1.5">
+              <span className="text-[10.5px] font-mono font-bold text-rose-300 flex items-center gap-1">
+                5. JURISDICTION-AWARE COMPLIANCE
+              </span>
+              <p className="text-[11px] text-[#8294b6] leading-normal">
+                Users agree to use Aplx in compliance with applicable local and international laws. Mandatory statutory rights under consumer protection and data protection frameworks prevail over conflicting disclaimer terms.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-amber-500/[0.07] border border-amber-500/25 text-[11px] text-amber-200/90 leading-relaxed flex items-start gap-2.5">
+            <ShieldAlert size={16} className="text-amber-400 flex-none mt-0.5" />
+            <span>
+              <strong>Notice:</strong> This summary describes Aplx's architecture and responsibilities to the maximum extent permitted by applicable law. For complete disclosures including India-specific and international frameworks, please consult the comprehensive Privacy & Legal Notice.
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );

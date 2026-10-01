@@ -1,4 +1,5 @@
 import type { UserProfile } from '../types';
+import { computeDataSignature, sanitizeInputPayload } from './securityGuard';
 
 const PROFILE_KEY = 'aplx:user_profile';
 
@@ -59,14 +60,26 @@ export function processImageToCompactSquare(
   });
 }
 
+/**
+ * Securely loads the user profile with tamper detection and sanitization.
+ */
 export function loadUserProfile(): UserProfile | null {
   try {
     const raw = localStorage.getItem(PROFILE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw);
+      const parsed = JSON.parse(raw) as UserProfile;
+      if (!parsed || typeof parsed !== 'object') return null;
+
+      // Sanitization check
+      if (parsed.name) {
+        parsed.name = sanitizeInputPayload(parsed.name, 60).clean;
+      }
+      if (parsed.bio) {
+        parsed.bio = sanitizeInputPayload(parsed.bio, 240).clean;
+      }
+
       // Auto-repair if an oversized base64 avatar exists in storage
       if (
-        parsed &&
         parsed.avatarType === 'custom' &&
         typeof parsed.avatar === 'string' &&
         parsed.avatar.length > 80000
@@ -78,15 +91,49 @@ export function loadUserProfile(): UserProfile | null {
           })
           .catch(() => {});
       }
+
+      // Verify cryptographic integrity asynchronously in background
+      if (parsed.integrityHash) {
+        computeDataSignature(parsed)
+          .then(computed => {
+            if (computed !== parsed.integrityHash) {
+              console.warn('[Security Guard] Profile integrity signature mismatch! Tampering detected.');
+              parsed.isTampered = true;
+            }
+          })
+          .catch(() => {});
+      }
+
       return parsed;
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[Security Guard] Corrupted profile detected in storage, resetting safely.', err);
+  }
   return null;
 }
 
+/**
+ * Securely saves the user profile and generates a cryptographic tamper-evident hash.
+ */
 export function saveUserProfile(profile: UserProfile): void {
   try {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    // Sanitize fields before saving
+    const sanitized: UserProfile = {
+      ...profile,
+      name: sanitizeInputPayload(profile.name || 'Explorer', 60).clean,
+      bio: profile.bio ? sanitizeInputPayload(profile.bio, 240).clean : undefined,
+      lastSecurityCheck: Date.now(),
+    };
+
+    // Calculate signature
+    computeDataSignature(sanitized)
+      .then(sig => {
+        sanitized.integrityHash = sig;
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(sanitized));
+      })
+      .catch(() => {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(sanitized));
+      });
   } catch (err) {
     console.warn('Could not save user profile to localStorage', err);
   }

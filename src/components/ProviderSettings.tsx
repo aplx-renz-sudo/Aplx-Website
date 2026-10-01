@@ -4,6 +4,7 @@ import type { ProviderConfig } from '../lib/credential';
 import { findProviderByModel, getProvider, PROVIDER_LIST, type ProviderId } from '../providers/registry';
 import { createProvider, isProviderReady } from '../providers';
 import { detectLocalOfflineModels, getCachedLocalModels, type LocalDetectionResult } from '../lib/localModelDetector';
+import { isApiLimitError, triggerApiLimitModal } from '../lib/apiLimitHandler';
 
 type ProviderSettingsProps = {
   config: ProviderConfig;
@@ -124,7 +125,14 @@ export function ProviderSettings({ config, onChange, onSave }: ProviderSettingsP
       }).testConnection();
       setStatus('Connected successfully to ' + active.name);
     } catch (err) {
-      setStatus(`Connection failed: ${err instanceof Error ? err.message : 'check credentials'}`);
+      const msg = err instanceof Error ? err.message : 'check credentials';
+      setStatus(`Connection failed: ${msg}`);
+      if (isApiLimitError(err) || isApiLimitError(msg)) {
+        triggerApiLimitModal({
+          providerName: active.name,
+          details: msg,
+        });
+      }
     }
   };
 
@@ -572,6 +580,20 @@ export function ProviderSettings({ config, onChange, onSave }: ProviderSettingsP
                 <RefreshCw size={10} />
               </div>
               <span>Test Direct Connection</span>
+            </button>
+
+            <button
+              type="button"
+              className="px-4 py-2.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-semibold text-emerald-300 hover:text-emerald-200 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-sm"
+              onClick={() => {
+                triggerApiLimitModal({
+                  providerName: active.name,
+                  details: 'Preview: Rate limit simulated (429 Too Many Requests)',
+                });
+              }}
+              title="Preview the funny 'Touch Grass & Drink Water' API limit popup"
+            >
+              <span>🌱 Preview &quot;Touch Grass&quot; Popup</span>
             </button>
 
             {active.requiresKey && (

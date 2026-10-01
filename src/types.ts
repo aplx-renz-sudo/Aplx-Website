@@ -1,7 +1,7 @@
 import type { ProviderConfig } from './lib/credential';
 import type { ChatTurn } from './providers/types';
 
-export type View = 'landing' | 'chat' | 'settings' | 'privacy' | 'about';
+export type View = 'landing' | 'chat' | 'settings' | 'privacy' | 'about' | 'build' | 'media';
 
 export type Message = ChatTurn & {
   id: string;
@@ -58,6 +58,13 @@ export type UserProfile = {
   bio?: string;
   joinedAt: number;
   isSetupComplete: boolean;
+  // Security & Protection Fields
+  securityPinHash?: string;
+  securityPinSalt?: string;
+  isPinLocked?: boolean;
+  integrityHash?: string;
+  isTampered?: boolean;
+  lastSecurityCheck?: number;
 };
 
 export type Preferences = {

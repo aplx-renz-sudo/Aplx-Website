@@ -4,9 +4,10 @@ import { Check, Copy, Download, WrapText } from 'lucide-react';
 type CodeBlockProps = {
   language: string;
   code: string;
+  label?: string;
 };
 
-export function CodeBlock({ language, code }: CodeBlockProps) {
+export function CodeBlock({ language, code, label }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
   const [wrap, setWrap] = useState(false);
 
@@ -55,7 +56,9 @@ export function CodeBlock({ language, code }: CodeBlockProps) {
             <span className="w-2.5 h-2.5 rounded-full bg-white/[0.12]" />
             <span className="w-2.5 h-2.5 rounded-full bg-white/[0.12]" />
           </div>
-          <span className="uppercase font-semibold tracking-wider text-[11px] text-[#f5f5f7]">{cleanLang}</span>
+          <span className={`font-semibold tracking-wider text-[11px] text-[#f5f5f7] ${label ? '' : 'uppercase'}`}>
+            {label || cleanLang}
+          </span>
           <span className="text-[#636366] text-[10px]">({lineCount} {lineCount === 1 ? 'line' : 'lines'})</span>
         </div>
 
