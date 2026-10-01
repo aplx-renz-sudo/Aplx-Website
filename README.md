@@ -1,18 +1,5 @@
-# Aplx Web App.
-Official lmao
+## APLX V2.
 
-see a lil up and compare the files to see and use for yo OS lmao
+yay update pushed.
 
-then clone ts fr
-
-ez use
-
-see yo start. type of files down here lmao
-
-mac- use the start.command (apple thingy)
-
-windows- use start.bat (big blue windows haha)
-
-linux- use start.sh (pengiun go brr)
-
-boom you have aplx
+(ps, start. files are broken lmao, webapp version will fix it, V2 webapp coming a few days later)
