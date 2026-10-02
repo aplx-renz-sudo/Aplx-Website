@@ -1,4 +1,4 @@
-## APLX V2.
+## DocX V2.
 
 yay update pushed.
 
